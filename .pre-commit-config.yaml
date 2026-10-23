@@ -1,0 +1,22 @@
+repos:
+  # Ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.0
+    hooks:
+      # Запуск ruff как линтера
+      - id: ruff
+        args: [--fix]  # автоматически исправлять ошибки
+
+      # Запуск ruff как форматтера
+      - id: ruff-format
+
+  # Общие проверки
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace      # удаляет лишние пробелы в конце строк
+      - id: check-yaml               # проверяет синтаксис YAML
+      - id: check-added-large-files  # предупреждает о больших файлах
+        args: ['--maxkb=500']
+      - id: check-merge-conflict     # проверяет конфликты слияния
+      - id: debug-statements         # ищет отладочные print()
