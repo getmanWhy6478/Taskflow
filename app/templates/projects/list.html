@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Проекты — TaskFlow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0">Мои проекты</h1>
+  <button class="btn btn-primary"
+          data-bs-toggle="collapse" data-bs-target="#newProjectForm">
+    <i class="bi bi-plus-lg"></i> Новый проект
+  </button>
+</div>
+
+<div class="collapse mb-4" id="newProjectForm">
+  <div class="card card-body shadow-sm">
+    <form method="post" action="{{ url_for('create_project') }}">
+      <div class="mb-3">
+        <label for="name" class="form-label">Название</label>
+        <input type="text" class="form-control" id="name"
+               name="name" maxlength="100" required>
+      </div>
+      <div class="mb-3">
+        <label for="description" class="form-label">Описание</label>
+        <textarea class="form-control" id="description"
+                  name="description" rows="2"></textarea>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Создать</button>
+        <button type="button" class="btn btn-outline-secondary"
+                data-bs-toggle="collapse" data-bs-target="#newProjectForm">Отмена</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if projects %}
+  <div class="row g-3">
+    {% for project in projects %}
+      <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('get_project_by_id', p_id=project.id) }}"
+           class="text-decoration-none">
+          <div class="card h-100 shadow-sm project-card">
+            <div class="card-body">
+              <h5 class="card-title text-dark mb-2">
+                <i class="bi bi-folder-fill text-warning"></i>
+                {{ project.name }}
+              </h5>
+              <p class="card-text text-muted small mb-0">
+                {{ project.description or 'Без описания' }}
+              </p>
+            </div>
+            <div class="card-footer bg-transparent border-top-0 small text-muted">
+              <i class="bi bi-person"></i> {{ project.owner.username }}
+            </div>
+          </div>
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="text-center py-5">
+    <i class="bi bi-folder2-open display-1 text-muted"></i>
+    <p class="text-muted mt-3">Пока нет ни одного проекта.</p>
+    <button class="btn btn-primary"
+            data-bs-toggle="collapse" data-bs-target="#newProjectForm">
+      Создать первый проект
+    </button>
+  </div>
+{% endif %}
+{% endblock %}

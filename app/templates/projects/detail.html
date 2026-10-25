@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} — TaskManager{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('get_projects') }}">Проекты</a></li>
+    <li class="breadcrumb-item active">{{ project.name }}</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <h1 class="h3 mb-1">{{ project.name }}</h1>
+    <p class="text-muted mb-0">{{ project.description or 'Без описания' }}</p>
+  </div>
+</div>
+
+<form method="get" class="row g-2 mb-4">
+  <div class="col-md-4">
+    <select name="status" class="form-select">
+      <option value="">Все статусы</option>
+      {% for s in statuses %}
+        <option value="{{ s.value }}" {% if status == s.value %}selected{% endif %}>
+          {{ s.label }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
+    <select name="priority" class="form-select">
+      <option value="">Все приоритеты</option>
+      {% for p in priorities %}
+        <option value="{{ p.value }}" {% if priority == p.value %}selected{% endif %}>
+          {{ p.label }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4 d-flex gap-2">
+    <button class="btn btn-outline-primary">
+      <i class="bi bi-funnel"></i> Применить
+    </button>
+    <a href="{{ url_for('project_detail', project_id=project.id) }}"
+       class="btn btn-outline-secondary">Сбросить</a>
+  </div>
+</form>
+
+<h2 class="h5 mb-3">
+  Задачи
+  <span class="badge bg-secondary">{{ tasks|length }}</span>
+</h2>
+
+{% if tasks %}
+  <div class="row g-3 mb-4">
+    {% for task in tasks %}
+      <div class="col-md-6 col-lg-4">
+        {% include "components/task_card.html" %}
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="alert alert-light text-center border">
+    <i class="bi bi-inbox text-muted"></i> Задач пока нет.
+  </div>
+{% endif %}
+
+<div class="card shadow-sm">
+  <div class="card-header bg-white">
+    <h2 class="h5 mb-0"><i class="bi bi-plus-circle"></i> Новая задача</h2>
+  </div>
+  <div class="card-body">
+    <form method="post" action="{{ url_for('create_task', project_id=project.id) }}">
+      <div class="mb-3">
+        <label for="title" class="form-label">Название</label>
+        <input type="text" class="form-control" id="title"
+               name="title" maxlength="200" required>
+      </div>
+
+      <div class="mb-3">
+        <label for="description" class="form-label">Описание</label>
+        <textarea class="form-control" id="description"
+                  name="description" rows="2"></textarea>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="priority" class="form-label">Приоритет</label>
+          <select class="form-select" id="priority" name="priority">
+            {% for p in priorities %}
+              <option value="{{ p.value }}"
+                      {% if p.value == 'medium' %}selected{% endif %}>
+                {{ p.label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label for="assignee_id" class="form-label">Исполнитель</label>
+          <select class="form-select" id="assignee_id" name="assignee_id">
+            <option value="">— не назначен —</option>
+            {% for member in members %}
+              <option value="{{ member.id }}">{{ member.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-lg"></i> Создать задачу
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

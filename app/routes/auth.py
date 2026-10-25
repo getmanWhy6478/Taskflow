@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Form, Request
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from starlette.responses import RedirectResponse
 
@@ -15,7 +16,9 @@ router = APIRouter(tags=["auth"])
 
 @router.get("/register")
 def register_page(request: Request):
-    return templates.TemplateResponse(request, "register.html", {"user": None})
+    return templates.TemplateResponse(
+        request, "auth/register.html", {"user": None, "fields_errors": None}
+    )
 
 
 @router.post("/register")
@@ -31,31 +34,47 @@ def register_user(
         form = RegisterForm(
             username=username, email=email, password=password, display_name=display_name
         )
-        if db.query(User).filter_by(username=form.username).first():
-            return templates.TemplateResponse(
-                request,
-                "register.html",
-                {"user": None, "error": "Username already in use."},
-                status_code=400,
-            )
-        hashed_password = hash_password(form.password)
-        user = User(
-            username=form.username,
-            password_hash=hashed_password,
-            email=form.email,
-            display_name=form.display_name,
+    except ValidationError as e:
+        fields_errors = {}
+        for error in e.errors():
+            field = error["loc"][0]
+            message = error["msg"]
+            fields_errors.setdefault(field, []).append(message)
+        return templates.TemplateResponse(
+            request,
+            "auth/register.html",
+            {
+                "user": None,
+                "fields_errors": fields_errors,
+                "username": username,
+                "email": email,
+                "display_name": display_name,
+            },
+            status_code=400,
         )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        return RedirectResponse("/login", status_code=303)
-    except ValueError:
-        return templates.TemplateResponse(request, "register.html", {"user": None}, status_code=400)
+    if db.query(User).filter_by(username=form.username).first():
+        return templates.TemplateResponse(
+            request,
+            "auth/register.html",
+            {"user": None, "error": "Username already in use."},
+            status_code=400,
+        )
+    hashed_password = hash_password(form.password)
+    user = User(
+        username=form.username,
+        password_hash=hashed_password,
+        email=form.email,
+        display_name=form.display_name,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return RedirectResponse("/login", status_code=303)
 
 
 @router.get("/login")
 def login_page(request: Request):
-    return templates.TemplateResponse(request, "login.html", {"user": None})
+    return templates.TemplateResponse(request, "auth/login.html", {"user": None})
 
 
 @router.post("/login")
@@ -70,7 +89,7 @@ def login_user(
     if not user or not auth_services.verify_password(password, user.password_hash):
         return templates.TemplateResponse(
             request,
-            "login.html",
+            "auth/login.html",
             {"user": None, "error": "No user with that username exists or incorrect password."},
             status_code=401,
         )

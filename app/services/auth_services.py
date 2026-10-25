@@ -1,7 +1,11 @@
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from pwdlib import PasswordHash
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.forms.register import RegisterForm
+from app.models import User
 
 session_serializer = URLSafeTimedSerializer(settings.secret_key)
 
@@ -25,3 +29,15 @@ def read_session_token(token: str) -> int | None:
         return session_serializer.loads(token, max_age=7 * 24 * 3600)
     except (BadSignature, SignatureExpired):
         return None
+
+
+def check_registration(form: RegisterForm, db: Session):
+    errors = []
+    if len(form.username) < 3:
+        errors.append("Логин должен быть не короче 3 символов")
+
+    if len(form.password) < 6:
+        errors.append("Пароль должен быть не короче 6 символов")
+
+    if db.scalar(select(User).where(User.username == form.username)):
+        errors.append("Пользователь с таким логином уже существует")

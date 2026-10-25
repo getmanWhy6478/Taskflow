@@ -8,6 +8,7 @@ from app.database import Base
 
 if TYPE_CHECKING:
     from app.models.tasks import Task
+    from app.models.project_members import ProjectsMember
 
 
 class Project(Base):
@@ -20,3 +21,5 @@ class Project(Base):
     updated_at: Mapped[datetime] = mapped_column(default=datetime.now)
 
     tasks: Mapped[list["Task"]] = relationship(back_populates="project")
+
+    members: Mapped[list["ProjectsMember"]] = relationship(back_populates="project")
