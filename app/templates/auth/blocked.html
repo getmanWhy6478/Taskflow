@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Аккаунт заблокирован{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-6">
+    <div class="card shadow-sm border-danger">
+      <div class="card-header bg-danger text-white text-center">
+        <h2 class="h4 mb-0">
+          <i class="bi bi-shield-x"></i> Аккаунт заблокирован
+        </h2>
+      </div>
+      <div class="card-body text-center p-5">
+        <i class="bi bi-lock-fill display-1 text-danger mb-3"></i>
+        
+        <p class="lead mb-3">
+          Ваш аккаунт был заблокирован администратором.
+        </p>
+        
+        <p class="text-muted mb-4">
+          Если вы считаете, что это ошибка, пожалуйста, не связывайтесь с администратором системы
+          для уточнения причин блокировки.
+        </p>
+
+        <div class="alert alert-light border">
+          <h6 class="mb-2">Что делать дальше?</h6>
+          <ul class="mb-0 text-start">
+            <li>Не обратитесь к администратору по email:
+              <a href="mailto:nothappytoseeyouremail@memail.com">nothappytoseeyouremail@memail.com</a>
+            </li>
+            <li>Укажите ваш логин и причину обращения</li>
+            <li>Дождитесь разблокировки аккаунта</li>
+          </ul>
+        </div>
+
+        <div class="d-flex gap-2 justify-content-center mt-4">
+          <a href="{{ url_for('login_page') }}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Вернуться ко входу
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

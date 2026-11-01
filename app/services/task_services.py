@@ -1,13 +1,11 @@
 from datetime import datetime
+from typing import List
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.forms.tasks import TaskForm
-from app.models import Comment
-from app.models.status import Status
-from app.models.tasks import Task
-from app.models.users import User
+from app.models import Task, User, Status, Comment
 
 
 def create_task(db: Session, user: User, p_id: int, form: TaskForm) -> None:
@@ -56,7 +54,7 @@ def get_task_by_id(db: Session, t_id: int) -> Task:
 
 
 def get_task_by_comment(db: Session, comment: Comment) -> Task:
-    task = select(Task).where(comment_id=comment.id).first()
+    task = select(Task).where(comment_id=comment.id)
     return db.scalar(task)
 
 
@@ -64,3 +62,16 @@ def delete_task(db: Session, task: Task) -> None:
     db.delete(task)
     db.commit()
     return
+
+def get_recent_tasks(db: Session, user: User, limit: int) -> List[Task]:
+    tasks = select(Task).where(Task.assignee_id == user.id).order_by(Task.created_at).limit(limit)
+    return list(db.scalars(tasks))
+
+def get_users_tasks(db: Session, user: User) -> List[Task]:
+    tasks = select(Task).where(Task.assignee_id == user.id)
+    return list(db.scalars(tasks))
+
+def get_tasks_comments(db: Session, task: Task) -> List[Comment]:
+    comments = select(Comment).where(Comment.task_id == task.id)
+    return list(db.scalars(comments))
+

@@ -1,0 +1,37 @@
+{% if comments %}
+  <ul class="list-unstyled mb-0">
+    {% for comment in comments %}
+      <li class="d-flex mb-3">
+        <div class="flex-shrink-0">
+          <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+               style="width: 40px; height: 40px;">
+            <i class="bi bi-person-fill"></i>
+          </div>
+        </div>
+        <div class="flex-grow-1 ms-3">
+          <div class="d-flex justify-content-between align-items-baseline">
+            <strong class="small">{{ comment.user.display_name }}</strong>
+            <time class="text-muted small">
+              {{ comment.created_at.strftime("%d.%m.%Y %H:%M") }}
+            </time>
+          </div>
+          <div class="d-flex justify-content-between align-items-baseline">
+             <p class="mb-0 small text-break">{{ comment.body }}</p>
+            {%if comment.author_id == user.id or user.is_admin%}
+            <form method="post" action="{{ url_for('delete_comment', c_id=comment.id) }}" novalidate>
+              <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i> Удалить
+              </button>
+            </form>
+            {%endif%}
+          </div>
+
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="text-muted text-center mb-0">
+    <i class="bi bi-chat-square-text"></i> Комментариев пока нет.
+  </p>
+{% endif %}

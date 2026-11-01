@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 if TYPE_CHECKING:
-    from app.models.users import User
+    from app.models import User, Task
 
 
 class Comment(Base):
@@ -19,4 +19,5 @@ class Comment(Base):
     created_at: Mapped[datetime] = mapped_column(default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(default=datetime.now)
 
-    user: Mapped["User"] = relationship(back_populates="comments")
+    user: Mapped["User"] = relationship(back_populates="comment")
+    task: Mapped["Task"] = relationship(back_populates="comment")

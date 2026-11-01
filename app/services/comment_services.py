@@ -7,7 +7,7 @@ from app.models.users import User
 
 
 def create_comment(db: Session, form: CommentForm, task: Task, user: User) -> None:
-    new_comment = Comment(body=form.text, task_id=task.id, user_id=user.id)
+    new_comment = Comment(body=form.text, task_id=task.id, author_id=user.id)
     db.add(new_comment)
     db.commit()
     db.refresh(new_comment)
@@ -17,4 +17,4 @@ def create_comment(db: Session, form: CommentForm, task: Task, user: User) -> No
 def delete_comment(db: Session, comment: Comment) -> None:
     db.delete(comment)
     db.commit()
-    db.refresh(comment)
+    return

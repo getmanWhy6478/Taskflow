@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Управление пользователями{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Главная</a></li>
+    <li class="breadcrumb-item active">Администрирование</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0">
+    <i class="bi bi-shield-lock"></i> Управление пользователями
+  </h1>
+  <span class="badge bg-primary fs-6">{{ users|length }} пользователей</span>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card border-start border-4 border-primary">
+      <div class="card-body">
+        <div class="text-muted small">Всего пользователей</div>
+        <div class="h3 mb-0 fw-bold">{{ users|length }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card border-start border-4 border-success">
+      <div class="card-body">
+        <div class="text-muted small">Активных</div>
+        <div class="h3 mb-0 fw-bold">{{ users|selectattr('is_banned', 'equalto', false)|list|length }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card border-start border-4 border-danger">
+      <div class="card-body">
+        <div class="text-muted small">Заблокированных</div>
+        <div class="h3 mb-0 fw-bold">{{ users|selectattr('is_banned', 'equalto', true)|list|length }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card border-start border-4 border-warning">
+      <div class="card-body">
+        <div class="text-muted small">Администраторов</div>
+        <div class="h3 mb-0 fw-bold">{{ users|selectattr('is_admin', 'equalto', true)|list|length }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Уведомления #}
+{% if success_message %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bi bi-check-circle"></i> {{ success_message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+{% if error_message %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="bi bi-exclamation-triangle"></i> {{ error_message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 50px;">ID</th>
+            <th style="width: 25%;">Пользователь</th>
+            <th style="width: 20%;">Email</th>
+            <th style="width: 12%;">Дата регистрации</th>
+            <th style="width: 10%;">Задач</th>
+            <th style="width: 10%;">Статус</th>
+            <th style="width: 10%;">Роль</th>
+            <th style="width: 15%;">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+            <tr class="{% if u.is_banned %}table-danger{% endif %}">
+              <td class="text-muted">{{ u.id }}</td>
+
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center"
+                       style="width: 36px; height: 36px;">
+                    <i class="bi bi-person-fill"></i>
+                  </div>
+                  <div>
+                    <div class="fw-semibold">{{ u.display_name or u.username }}</div>
+                    <div class="text-muted small">@{{ u.username }}</div>
+                  </div>
+                </div>
+              </td>
+
+              <td>
+                <a href="mailto:{{ u.email }}" class="text-decoration-none">
+                  <i class="bi bi-envelope"></i> {{ u.email }}
+                </a>
+              </td>
+
+              <td>
+                {% if u.created_at %}
+                  <span title="{{ u.created_at.strftime('%d.%m.%Y %H:%M') }}">
+                    {{ u.created_at.strftime("%d.%m.%Y") }}
+                  </span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+
+              <td>
+                <span class="badge bg-secondary">{{ u.tasks_count }}</span>
+              </td>
+
+              <td>
+                {% if u.is_banned %}
+                  <span class="badge bg-danger">
+                    <i class="bi bi-lock-fill"></i> Заблокирован
+                  </span>
+                {% else %}
+                  <span class="badge bg-success">
+                    <i class="bi bi-check-circle"></i> Активен
+                  </span>
+                {% endif %}
+              </td>
+
+              <td>
+                {% if u.is_admin %}
+                  <span class="badge bg-primary">
+                    <i class="bi bi-shield-fill-check"></i> Админ
+                  </span>
+                {% else %}
+                  <span class="badge bg-secondary">Пользователь</span>
+                {% endif %}
+              </td>
+
+              <td>
+                <div class="btn-group btn-group-sm" role="group">
+                  {% if u.id != user.id %}
+                    {% if u.is_banned %}
+                      <form method="post" action="{{ url_for('unban_user', u_id=u.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-outline-success" title="Разблокировать">
+                          <i class="bi bi-unlock"></i>
+                        </button>
+                      </form>
+                    {% else %}
+                      <form method="post" action="{{ url_for('ban_user', u_id=u.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-outline-danger" title="Заблокировать"
+                                onclick="return confirm('Заблокировать пользователя {{ u.username }}?');">
+                          <i class="bi bi-lock"></i>
+                        </button>
+                      </form>
+                    {% endif %}
+
+                    {% if u.is_admin %}
+                      <form method="post" action="{{ url_for('make_user_admin', u_id=u.id) }}" class="d-inline">
+                        <input type="hidden" name="action" value="remove_admin">
+                        <button type="submit" class="btn btn-outline-warning" title="Снять роль администратора"
+                                onclick="return confirm('Снять роль администратора у {{ u.username }}?');">
+                          <i class="bi bi-shield-x"></i>
+                        </button>
+                      </form>
+                    {% else %}
+                      <form method="post" action="{{ url_for('make_user_admin', u_id=u.id) }}" class="d-inline">
+                        <input type="hidden" name="action" value="make_admin">
+                        <button type="submit" class="btn btn-outline-primary" title="Назначить администратором"
+                                onclick="return confirm('Назначить {{ u.username }} администратором?');">
+                          <i class="bi bi-shield-check"></i>
+                        </button>
+                      </form>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted small">Это вы</span>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% if not users %}
+  <div class="text-center py-5">
+    <i class="bi bi-people display-1 text-muted"></i>
+    <p class="text-muted mt-3 mb-0">
+        Пользователей пока нет
+    </p>
+  </div>
+{% endif %}
+
+{% endblock %}

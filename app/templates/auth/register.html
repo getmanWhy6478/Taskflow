@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Регистрация — TaskFlow{% endblock %}
+{% block title %}Регистрация{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -21,27 +21,42 @@
         <form method="post" action="{{ url_for('register_user') }}" novalidate>
           <div class="mb-3">
             <label for="username" class="form-label">Логин</label>
-            <input type="text" class="form-control {%if fields_errors.username%} is-invalid {%endif%}" id="username"
+            <input type="text" class="form-control {%if field_errors.username%} is-invalid {%endif%}" id="username"
                    name="username" minlength="3" maxlength="50"
                    value="{{ username or '' }}" required autofocus>
+            {% if field_errors and field_errors.username %}
+              <div class="invalid-feedback">
+                {{ field_errors.username[0] }}
+              </div>
+            {% endif %}
           </div>
 
           <div class="mb-3">
             <label for="email" class="form-label">Email</label>
-            <input type="text" class="form-control {%if fields_errors.email%} is-invalid {%endif%}" id="email"
+            <input type="text" class="form-control {%if field_errors.email%} is-invalid {%endif%}" id="email"
                    name="email" value="{{ email or '' }}">
+            {% if field_errors and field_errors.email %}
+              <div class="invalid-feedback">
+                {{ field_errors.email[0] }}
+              </div>
+            {% endif %}
           </div>
 
           <div class="mb-3">
             <label for="display_name" class="form-label">Никнейм</label>
-            <input type="text" class="form-control {%if fields_errors.display_name%} is-invalid {%endif%}" id="display_name"
+            <input type="text" class="form-control {%if field_errors.display_name%} is-invalid {%endif%}" id="display_name"
                    name="display_name" value="{{ display_name or '' }}">
           </div>
 
           <div class="mb-3">
             <label for="password" class="form-label">Пароль</label>
-            <input type="password" class="form-control {%if fields_errors.password%} is-invalid {%endif%}" id="password"
+            <input type="password" class="form-control {%if field_errors.password%} is-invalid {%endif%}" id="password"
                    name="password" minlength="8" required>
+            {% if field_errors and field_errors.password %}
+                <div class="invalid-feedback">
+                  {{ field_errors.password[0] }}
+                </div>
+            {% endif %}
             <div class="form-text">Минимум 8 символов</div>
           </div>
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from starlette.responses import RedirectResponse
 
@@ -12,11 +12,11 @@ from app.services import permission_services as permission_service
 router = APIRouter(prefix="/comments", tags=["comments"])
 
 
-@router.post("{c_id}/delete")
+@router.post("/{c_id}/delete")
 def delete_comment(c_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
     comment = db.get(Comment, c_id)
-    if permission_service.can_delete_comment(user, comment):
-        comment_service.delete_comment(db, comment)
-        response = RedirectResponse("/projects")
-        return response
-    return RedirectResponse("/users")
+    if not permission_service.can_delete_comment(user, comment):
+        raise HTTPException(status_code=403, detail="Нет прав")
+    comment_service.delete_comment(db, comment)
+    response = RedirectResponse("/projects",status_code=303)
+    return response

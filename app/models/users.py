@@ -2,13 +2,12 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+import sqlalchemy as sa
 
 from app.database import Base
 
 if TYPE_CHECKING:
-    from app.models.comments import Comment
-    from app.models.tasks import Task
-    from app.models.project_members import ProjectsMember
+    from app.models import Comment, Task, ProjectsMember, Project
 
 
 class User(Base):
@@ -19,9 +18,23 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(unique=True)
     display_name: Mapped[str] = mapped_column(unique=True)
     is_admin: Mapped[bool] = mapped_column(default=False)
+    is_banned: Mapped[bool] = mapped_column(default=False, server_default=sa.false())
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(default=datetime.now)
 
-    tasks: Mapped[list["Task"]] = relationship(back_populates="user")
-    comments: Mapped[list["Comment"]] = relationship(back_populates="user")
-    projects: Mapped[list["ProjectsMember"]] = relationship(back_populates="user")
+    task: Mapped[list["Task"]] = relationship(back_populates="user", foreign_keys="Task.author_id")
+    comment: Mapped[list["Comment"]] = relationship(back_populates="user")
+
+    assigned_tasks: Mapped[list["Task"]] = relationship(
+        back_populates="assignee",
+        foreign_keys="Task.assignee_id"
+    )
+
+
+    project: Mapped[list["Project"]] = relationship(back_populates="members", secondary="projects_members",
+        viewonly=True)
+
+    project_memberships: Mapped[list["ProjectsMember"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    my_project:Mapped["Project"] = relationship(back_populates="owner")

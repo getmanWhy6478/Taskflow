@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -12,11 +12,6 @@ class TaskForm(BaseModel):
     status: Status
     priority: Priority = Priority.MEDIUM
     assignee_id: int | None = None
-    due_date: datetime | None = None
+    due_date: date | None = None
 
-    @classmethod
-    @field_validator("due_date")
-    def due_date_validator(cls, value):
-        if value < datetime.now():
-            raise ValueError("Due date must be in the future")
-        return value
+

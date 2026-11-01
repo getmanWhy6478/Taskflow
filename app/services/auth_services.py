@@ -1,6 +1,5 @@
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from pwdlib import PasswordHash
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -31,13 +30,18 @@ def read_session_token(token: str) -> int | None:
         return None
 
 
-def check_registration(form: RegisterForm, db: Session):
-    errors = []
-    if len(form.username) < 3:
-        errors.append("Логин должен быть не короче 3 символов")
+def add_user(form: RegisterForm, db: Session, hashed_password: str) -> None:
+    user = User(
+        username=form.username,
+        password_hash=hashed_password,
+        email=form.email,
+        display_name=form.display_name,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return
 
-    if len(form.password) < 6:
-        errors.append("Пароль должен быть не короче 6 символов")
-
-    if db.scalar(select(User).where(User.username == form.username)):
-        errors.append("Пользователь с таким логином уже существует")
+def is_user_already_registered(db: Session, form: RegisterForm) -> bool:
+    return (db.query(User).filter_by(username=form.username).first() is not None and
+            db.query(User).filter_by(email=form.email).first() is not None)

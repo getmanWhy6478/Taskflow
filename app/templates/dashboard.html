@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0">
+    <i class="bi bi-speedometer2"></i> Панель управления
+  </h1>
+</div>
+
+<div class="row g-3 mb-5">
+  <div class="col-md-6 col-lg-3">
+    <div class="card border-start border-4 border-primary h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase">Мои открытые</div>
+            <div class="h2 mb-0 fw-bold">{{ stats["new_tasks_count"] }}</div>
+          </div>
+          <i class="bi bi-inbox display-4 text-primary opacity-25"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-lg-3">
+    <div class="card border-start border-4 border-warning h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase">В работе</div>
+            <div class="h2 mb-0 fw-bold">{{ stats["in_work_tasks_count"] }}</div>
+          </div>
+          <i class="bi bi-gear-wide-connected display-4 text-warning opacity-25"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-lg-3">
+    <div class="card border-start border-4 border-success h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase">Выполнены за неделю</div>
+            <div class="h2 mb-0 fw-bold">{{ stats["week_complete_tasks_count"] }}</div>
+          </div>
+          <i class="bi bi-check-circle display-4 text-success opacity-25"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-lg-3">
+    <div class="card border-start border-4 border-danger h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase">Просрочены</div>
+            <div class="h2 mb-0 fw-bold">{{ stats["wasted_tasks_count"] }}</div>
+          </div>
+          <i class="bi bi-exclamation-triangle display-4 text-danger opacity-25"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header bg-white">
+    <h2 class="h5 mb-0">
+      <i class="bi bi-clock-history"></i> Последние задачи
+    </h2>
+  </div>
+  <div class="card-body">
+    {% if recent_tasks %}
+      <div class="list-group list-group-flush">
+        {% for task in recent_tasks %}
+          <a href="{{ url_for('get_task', t_id=task.id) }}"
+             class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <h6 class="mb-0">{{ task.title }}</h6>
+                <span class="badge
+                  {% if task.status.value == 'Выполнена' %}bg-success
+                  {% elif task.status.value == 'В работе' %}bg-primary
+                  {% else %}bg-secondary{% endif %}">
+                  {{ task.status.label }}
+                </span>
+                <span class="badge rounded-pill
+                  {% if task.priority.value == 'Высокий' %}bg-danger
+                  {% elif task.priority.value == 'Средний' %}bg-warning text-dark
+                  {% else %}bg-success{% endif %}">
+                  {{ task.priority.label }}
+                </span>
+              </div>
+              <small class="text-muted">
+                <i class="bi bi-folder"></i> {{ task.project.name }}
+                {% if task.created_at %}
+                  · <i class="bi bi-calendar"></i> {{ task.due_date.strftime("%d.%m.%Y") }}
+                {% endif %}
+              </small>
+            </div>
+            <i class="bi bi-chevron-right text-muted"></i>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-4">
+        <i class="bi bi-inbox display-1 text-muted"></i>
+        <p class="text-muted mt-3 mb-0">У вас пока нет задач</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

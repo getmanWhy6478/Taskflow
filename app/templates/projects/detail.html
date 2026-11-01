@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ project.name }} — TaskManager{% endblock %}
+{% block title %}{{ project.name }}{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-3">
@@ -9,12 +9,91 @@
   </ol>
 </nav>
 
+{% set is_owner = (user.id == project.owner_id) %}
+
+{% set removable_members = [] %}
+{% for m in project.members %}
+  {% if m.id != project.owner_id %}
+    {% set _ = removable_members.append(m) %}
+  {% endif %}
+{% endfor %}
+
 <div class="d-flex justify-content-between align-items-start mb-4">
   <div>
     <h1 class="h3 mb-1">{{ project.name }}</h1>
     <p class="text-muted mb-0">{{ project.description or 'Без описания' }}</p>
   </div>
+
+
+  <div class="d-flex gap-2">
+    {% if is_owner %}
+    <a href="{{ url_for('edit_project', p_id=project.id) }}" class="btn btn-primary">
+      <i class="bi bi-plus-lg"></i> Редактировать проект
+    </a>
+    {% endif %}
+    <button type="button" class="btn btn-outline-primary"
+            data-bs-toggle="modal" data-bs-target="#addMemberModal">
+      <i class="bi bi-person-plus"></i> Добавить участника
+    </button>
+
+
+    {% if is_owner %}
+      <button type="button" class="btn btn-outline-danger"
+              data-bs-toggle="modal" data-bs-target="#removeMemberModal"
+              {% if not removable_members %}disabled title="Нет участников для удаления"{% endif %}>
+        <i class="bi bi-person-dash"></i> Удалить участника
+      </button>
+    {% endif %}
+
+    <a href="{{ url_for('create_task', p_id=project.id) }}" class="btn btn-primary">
+      <i class="bi bi-plus-lg"></i> Создать задачу
+    </a>
+
+    <form action="{{ url_for('delete_project', p_id=project.id) }}"
+          method="post"
+          style="display: inline;"
+          onsubmit="return confirm('Вы уверены, что хотите удалить проект? Это действие нельзя отменить.');">
+      <button type="submit" class="btn btn-danger">
+        <i class="bi bi-trash"></i> Удалить проект
+      </button>
+    </form>
+  </div>
 </div>
+
+{% if project.members %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h2 class="h6 mb-0">
+      <i class="bi bi-people"></i> Участники
+      <span class="badge bg-secondary">{{ project.members|length }}</span>
+    </h2>
+  </div>
+  <div class="card-body">
+    <div class="d-flex flex-wrap gap-2">
+      {% for member in project.members %}
+        <div class="d-flex align-items-center gap-2 px-3 py-2 bg-light rounded">
+          <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center"
+               style="width: 32px; height: 32px;">
+            <i class="bi bi-person-fill small"></i>
+          </div>
+          <div>
+            <div class="fw-semibold small">{{ member.display_name or member.username }}</div>
+            <div class="text-muted" style="font-size: 0.75rem;">
+              {% if member.id == project.owner_id %}
+                <i class="bi bi-star-fill text-warning"></i> Владелец
+              {% elif member.role == 'admin' %}
+                <i class="bi bi-shield-fill-check text-primary"></i> Админ
+              {% else %}
+                Участник
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
 
 <form method="get" class="row g-2 mb-4">
   <div class="col-md-4">
@@ -22,7 +101,7 @@
       <option value="">Все статусы</option>
       {% for s in statuses %}
         <option value="{{ s.value }}" {% if status == s.value %}selected{% endif %}>
-          {{ s.label }}
+          {{ s.value }}
         </option>
       {% endfor %}
     </select>
@@ -32,84 +111,365 @@
       <option value="">Все приоритеты</option>
       {% for p in priorities %}
         <option value="{{ p.value }}" {% if priority == p.value %}selected{% endif %}>
-          {{ p.label }}
+          {{ p.value }}
         </option>
       {% endfor %}
     </select>
   </div>
-  <div class="col-md-4 d-flex gap-2">
-    <button class="btn btn-outline-primary">
+  <div class="col-md-4">
+    <select name="sort_member" class="form-select">
+      <option value="">Все пользователи</option>
+      {% for u in project.members %}
+        <option value="{{ u.id }}" {% if sort_member == u.id|string %}selected{% endif %}>
+          {{ u.username }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-md-3">
+    <select name="sort_by" class="form-select">
+      <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>
+        Сначала новые
+      </option>
+      <option value="due_date" {% if sort_by == 'due_date' %}selected{% endif %}>
+        По сроку
+      </option>
+      <option value="priority" {% if sort_by == 'priority' %}selected{% endif %}>
+        По приоритету
+      </option>
+      <option value="title" {% if sort_by == 'title' %}selected{% endif %}>
+        По названию
+      </option>
+    </select>
+  </div>
+  <div class="col-md-3">
+    <select name="sort_order" class="form-select">
+      <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>
+        По возрастанию
+      </option>
+      <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>
+        По убыванию
+      </option>
+    </select>
+  </div>
+
+  <div class="col-md-6">
+    <div class="input-group">
+      <span class="input-group-text">
+        <i class="bi bi-search"></i>
+      </span>
+      <input type="text"
+             class="form-control"
+             name="search"
+             value="{{ search or '' }}"
+             placeholder="Поиск по названию или описанию задачи...">
+    </div>
+  </div>
+
+  <div class="col-12 d-flex gap-2">
+    <button type="submit" class="btn btn-outline-primary">
       <i class="bi bi-funnel"></i> Применить
     </button>
-    <a href="{{ url_for('project_detail', project_id=project.id) }}"
-       class="btn btn-outline-secondary">Сбросить</a>
+    <a href="{{ url_for('get_project_by_id', p_id=project.id) }}" class="btn btn-outline-secondary">
+      <i class="bi bi-x-lg"></i> Сбросить
+    </a>
   </div>
 </form>
 
-<h2 class="h5 mb-3">
-  Задачи
-  <span class="badge bg-secondary">{{ tasks|length }}</span>
-</h2>
-
-{% if tasks %}
-  <div class="row g-3 mb-4">
-    {% for task in tasks %}
-      <div class="col-md-6 col-lg-4">
-        {% include "components/task_card.html" %}
-      </div>
-    {% endfor %}
-  </div>
-{% else %}
-  <div class="alert alert-light text-center border">
-    <i class="bi bi-inbox text-muted"></i> Задач пока нет.
-  </div>
-{% endif %}
-
 <div class="card shadow-sm">
-  <div class="card-header bg-white">
-    <h2 class="h5 mb-0"><i class="bi bi-plus-circle"></i> Новая задача</h2>
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h2 class="h5 mb-0">
+      <i class="bi bi-list-check"></i> Задачи
+      <span class="badge bg-secondary">{{ total_count }}</span>
+    </h2>
+    <small class="text-muted">
+      Страница {{ page }} из {{ total_pages }}
+    </small>
   </div>
-  <div class="card-body">
-    <form method="post" action="{{ url_for('create_task', project_id=project.id) }}">
-      <div class="mb-3">
-        <label for="title" class="form-label">Название</label>
-        <input type="text" class="form-control" id="title"
-               name="title" maxlength="200" required>
-      </div>
 
-      <div class="mb-3">
-        <label for="description" class="form-label">Описание</label>
-        <textarea class="form-control" id="description"
-                  name="description" rows="2"></textarea>
-      </div>
-
-      <div class="row g-3 mb-3">
-        <div class="col-md-6">
-          <label for="priority" class="form-label">Приоритет</label>
-          <select class="form-select" id="priority" name="priority">
-            {% for p in priorities %}
-              <option value="{{ p.value }}"
-                      {% if p.value == 'medium' %}selected{% endif %}>
-                {{ p.label }}
-              </option>
+  <div class="card-body p-0">
+    {% if tasks %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="width: 35%;">Название</th>
+              <th style="width: 12%;">Статус</th>
+              <th style="width: 12%;">Приоритет</th>
+              <th style="width: 15%;">Исполнитель</th>
+              <th style="width: 13%;">Срок</th>
+              <th style="width: 13%;">Обновлена</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for task in tasks %}
+              <tr class="task-row">
+                <td>
+                  <a href="{{ url_for('get_task', t_id=task.id) }}" class="text-decoration-none fw-semibold">
+                    {{ task.title }}
+                  </a>
+                  {% if task.description %}
+                    <div class="text-muted small text-truncate" style="max-width: 300px;">
+                      {{ task.description }}
+                    </div>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge
+                    {% if task.status.value == 'Выполнена' %}bg-success
+                    {% elif task.status.value == 'В работе' %}bg-primary
+                    {% else %}bg-secondary{% endif %}">
+                    {{ task.status.value }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge
+                    {% if task.priority.value == 'Высокий' %}bg-danger
+                    {% elif task.priority.value == 'Средний' %}bg-warning text-dark
+                    {% else %}bg-success{% endif %}">
+                    {{ task.priority.value }}
+                  </span>
+                </td>
+                <td>
+                  {% if task.user %}
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center"
+                           style="width: 28px; height: 28px;">
+                        <i class="bi bi-person-fill small"></i>
+                      </div>
+                      <span>{{ task.user.display_name or task.user.username }}</span>
+                    </div>
+                  {% else %}
+                    <span class="text-muted small">
+                      <i class="bi bi-person-x"></i> Не назначен
+                    </span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if task.due_date %}
+                    {% set is_overdue = task.due_date < today and task.status.value != 'Выполнена' %}
+                    <span class="{% if is_overdue %}text-danger fw-semibold{% endif %}">
+                      <i class="bi bi-calendar-event"></i>
+                      {{ task.due_date.strftime("%d.%m.%Y") }}
+                    </span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if task.updated_at %}
+                    <span class="text-muted small" title="{{ task.updated_at.strftime('%d.%m.%Y %H:%M') }}">
+                      {{ task.updated_at.strftime("%d.%m.%Y") }}
+                    </span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+              </tr>
             {% endfor %}
-          </select>
-        </div>
-        <div class="col-md-6">
-          <label for="assignee_id" class="form-label">Исполнитель</label>
-          <select class="form-select" id="assignee_id" name="assignee_id">
-            <option value="">— не назначен —</option>
-            {% for member in members %}
-              <option value="{{ member.id }}">{{ member.username }}</option>
-            {% endfor %}
-          </select>
-        </div>
+          </tbody>
+        </table>
       </div>
 
-      <button type="submit" class="btn btn-primary">
-        <i class="bi bi-check-lg"></i> Создать задачу
-      </button>
-    </form>
+      {% if total_pages > 1 %}
+        <div class="card-footer bg-white">
+          <nav aria-label="Навигация по страницам">
+            <ul class="pagination justify-content-center mb-0">
+
+              {# Кнопка "Первая" #}
+              {% if page > 1 %}
+                <li class="page-item">
+                  <a class="page-link"
+                     href="{{ request.url.include_query_params(page=1) }}">
+                    <i class="bi bi-chevron-double-left"></i>
+                  </a>
+                </li>
+              {% endif %}
+
+              {# Кнопка "Предыдущая" #}
+              {% if page > 1 %}
+                <li class="page-item">
+                  <a class="page-link"
+                     href="{{ request.url.include_query_params(page=page - 1) }}">
+                    <i class="bi bi-chevron-left"></i>
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+                </li>
+              {% endif %}
+
+              {# Номера страниц с "..." для больших диапазонов #}
+              {% for p in range(1, total_pages + 1) %}
+                {# Показываем: первую, последнюю, текущую и по 2 вокруг текущей #}
+                {% if p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+                  <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link"
+                       href="{{ request.url.include_query_params(page=p) }}">
+                      {{ p }}
+                    </a>
+                  </li>
+                {% elif p == page - 3 or p == page + 3 %}
+                  <li class="page-item disabled">
+                    <span class="page-link">…</span>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              {# Кнопка "Следующая" #}
+              {% if page < total_pages %}
+                <li class="page-item">
+                  <a class="page-link"
+                     href="{{ request.url.include_query_params(page=page+1) }}">
+                    <i class="bi bi-chevron-right"></i>
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+                </li>
+              {% endif %}
+
+              {% if page < total_pages %}
+                <li class="page-item">
+                  <a class="page-link"
+                     href="{{ request.url.include_query_params(page=total_pages)}}">
+                    <i class="bi bi-chevron-double-right"></i>
+                  </a>
+                </li>
+              {% endif %}
+
+            </ul>
+          </nav>
+
+          <div class="text-center mt-2 small text-muted">
+            Показано {{ ((page - 1) * tasks_per_page) + 1 }}–{{ [page * tasks_per_page, total_count]|min }}
+            из {{ total_count }} задач
+          </div>
+        </div>
+      {% endif %}
+
+    {% else %}
+      <div class="text-center py-5">
+        <i class="bi bi-inbox display-1 text-muted"></i>
+        <p class="text-muted mt-3 mb-0">
+          {% if search or status or priority %}
+            По заданным фильтрам задач не найдено
+          {% else %}
+            Задач пока нет
+          {% endif %}
+        </p>
+      </div>
+    {% endif %}
   </div>
 </div>
+
+<div class="modal fade" id="addMemberModal" tabindex="-1" aria-labelledby="addMemberModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('manage_member', p_id=project.id) }}">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addMemberModalLabel">
+            <i class="bi bi-person-plus"></i> Добавить участника
+          </h5>
+          <input type="hidden" name="action" value="add">
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+
+        <div class="modal-body">
+          {% if available_users %}
+            <div class="mb-3">
+              <label for="member_id" class="form-label">Выберите пользователя</label>
+              <select class="form-select" id="member_id" name="member_id" required>
+                <option value="">— выберите —</option>
+                {% for u in available_users %}
+                  <option value="{{ u.id }}">
+                    {{ u.display_name or u.username }} (@{{ u.username }})
+                  </option>
+                {% endfor %}
+              </select>
+              <div class="form-text">
+                Пользователи, уже состоящие в проекте, не отображаются.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="role" class="form-label">Роль в проекте</label>
+              <select class="form-select" id="role" name="role">
+                <option value="member" selected>Участник</option>
+                <option value="admin">Администратор</option>
+              </select>
+            </div>
+          {% else %}
+            <div class="alert alert-info mb-0">
+              <i class="bi bi-info-circle"></i>
+              Все пользователи уже состоят в этом проекте.
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+          {% if available_users %}
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-plus-lg"></i> Добавить
+            </button>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="removeMemberModal" tabindex="-1" aria-labelledby="removeMemberModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('manage_member', p_id=project.id) }}"
+            onsubmit="return confirm('Вы уверены, что хотите удалить участника из проекта?');">
+        <div class="modal-header bg-danger bg-opacity-10">
+          <h5 class="modal-title text-danger" id="removeMemberModalLabel">
+            <i class="bi bi-person-dash"></i> Удалить участника
+          </h5>
+          <input type="hidden" name="action" value="remove">
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          {% if removable_members %}
+            <div class="mb-3">
+              <label for="remove_member_id" class="form-label">Выберите участника для удаления</label>
+              <select class="form-select" id="remove_member_id" name="member_id" required>
+                <option value="">— выберите —</option>
+                {% for m in removable_members %}
+                  <option value="{{ m.id }}">
+                    {{ m.display_name or m.username }} (@{{ m.username }})
+                    {% if m.role == 'admin' %}— Админ{% endif %}
+                  </option>
+                {% endfor %}
+              </select>
+              <div class="form-text">
+                Владелец проекта не может быть удалён.
+              </div>
+            </div>
+          {% else %}
+            <div class="alert alert-warning mb-0">
+              <i class="bi bi-exclamation-triangle"></i>
+              Вы — единственный участник проекта. Удалить никого нельзя.
+            </div>
+          {% endif %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+          {% if removable_members %}
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-trash"></i> Удалить из проекта
+            </button>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

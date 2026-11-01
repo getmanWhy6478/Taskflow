@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Редактирование: {{ task.title }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('get_projects') }}">Проекты</a></li>
+    <li class="breadcrumb-item">
+      <a href="{{ url_for('get_project_by_id', p_id=task.project_id) }}">
+        {{ task.project.name }}
+      </a>
+    </li>
+    <li class="breadcrumb-item">
+      <a href="{{ url_for('get_task', t_id=task.id) }}">{{ task.title }}</a>
+    </li>
+    <li class="breadcrumb-item active">Редактирование</li>
+  </ol>
+</nav>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white">
+        <h1 class="h4 mb-0"><i class="bi bi-pencil-square"></i> Редактирование задачи</h1>
+      </div>
+      <div class="card-body p-4">
+        
+        {% if field_errors %}
+          <div class="alert alert-danger">
+            <ul class="mb-0">
+              {% for field, errors in field_errors.items() %}
+                {% for error in errors %}
+                  <li>{{ error }}</li>
+                {% endfor %}
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('edit_task', t_id=task.id) }}" novalidate>
+          <div class="mb-3">
+            <label for="title" class="form-label">Название <span class="text-danger">*</span></label>
+            <input type="text" 
+                   class="form-control {% if field_errors.title %}is-invalid{% endif %}" 
+                   id="title" 
+                   name="title" 
+                   value="{{ title if title else task.title }}"
+                   maxlength="200" 
+                   required 
+                   autofocus>
+            {% if field_errors.title %}
+              <div class="invalid-feedback">{{ field_errors.title[0] }}</div>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label for="description" class="form-label">Описание</label>
+            <textarea class="form-control" 
+                      id="description" 
+                      name="description" 
+                      rows="4">{{ description if description else task.description }}</textarea>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <label for="status" class="form-label">Статус</label>
+              <select class="form-select" id="status" name="status">
+                {% for s in statuses %}
+                  <option value="{{ s.value }}" 
+                          {% if status == s.value %}selected
+                          {% elif s == task.status %}selected{% endif %}>
+                    {{ s.value }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label for="priority" class="form-label">Приоритет</label>
+              <select class="form-select {% if field_errors.priority %}is-invalid{% endif %}" 
+                      id="priority" 
+                      name="priority">
+                {% for p in priorities %}
+                  <option value="{{ p.value }}" 
+                          {% if priority == p.value %}selected
+                          {% elif p == task.priority %}selected{% endif %}>
+                    {{ p.value }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label for="assignee_id" class="form-label">Исполнитель</label>
+              <select class="form-select" id="assignee_id" name="assignee_id">
+                <option value="">— не назначен —</option>
+                {% for member in members %}
+                  <option value="{{ member.id }}"
+                          {% if assignee_id == member.id|string %}selected
+                          {% elif task.assignee_id == member.id %}selected{% endif %}>
+                    {{ member.username }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+            <label for="due_date" class="form-label">Срок на выполнение</label>
+            <input  type="date" class="form-control"
+                    id="due_date"
+                    name="due_date"
+                    value="{{ due_time if due_time else '' }}">
+          </div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg"></i> Сохранить изменения
+            </button>
+            <a href="{{ url_for('get_task', t_id=task.id) }}" class="btn btn-outline-secondary">
+              Отмена
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

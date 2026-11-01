@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, Request, Query
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from starlette.responses import RedirectResponse
@@ -7,7 +7,7 @@ from app.database import get_db
 from app.forms.login import LoginForm
 from app.forms.register import RegisterForm
 from app.models.users import User
-from app.services import auth_services
+from app.services import auth_services as auth_services
 from app.services.auth_services import hash_password
 from app.templates.templates import templates
 
@@ -17,7 +17,7 @@ router = APIRouter(tags=["auth"])
 @router.get("/register")
 def register_page(request: Request):
     return templates.TemplateResponse(
-        request, "auth/register.html", {"user": None, "fields_errors": None}
+        request, "auth/register.html", {"user": None, "field_errors": None}
     )
 
 
@@ -35,40 +35,34 @@ def register_user(
             username=username, email=email, password=password, display_name=display_name
         )
     except ValidationError as e:
-        fields_errors = {}
+        field_errors = {}
         for error in e.errors():
             field = error["loc"][0]
             message = error["msg"]
-            fields_errors.setdefault(field, []).append(message)
+            field_errors.setdefault(field, []).append(message)
         return templates.TemplateResponse(
             request,
             "auth/register.html",
             {
                 "user": None,
-                "fields_errors": fields_errors,
+                "field_errors": field_errors,
                 "username": username,
                 "email": email,
                 "display_name": display_name,
             },
             status_code=400,
         )
-    if db.query(User).filter_by(username=form.username).first():
+    if auth_services.is_user_already_registered(db, form):
+        errors = []
+        errors.append("Username already in use.")
         return templates.TemplateResponse(
             request,
             "auth/register.html",
-            {"user": None, "error": "Username already in use."},
+            {"user": None, "errors": errors, "field_errors": None},
             status_code=400,
         )
     hashed_password = hash_password(form.password)
-    user = User(
-        username=form.username,
-        password_hash=hashed_password,
-        email=form.email,
-        display_name=form.display_name,
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    auth_services.add_user(form, db,  hashed_password)
     return RedirectResponse("/login", status_code=303)
 
 
@@ -93,7 +87,16 @@ def login_user(
             {"user": None, "error": "No user with that username exists or incorrect password."},
             status_code=401,
         )
-    response = RedirectResponse("/projects", status_code=303)
+    if user.is_banned:
+        return templates.TemplateResponse(
+            request, "auth/login.html",
+            {
+                "error": "Ваш аккаунт заблокирован. Обратитесь к администратору.",
+                "username": username
+            },
+            status_code=403,
+        )
+    response = RedirectResponse("/dashboard", status_code=303)
     response.set_cookie(
         "session",
         auth_services.create_session_token(user.id),
@@ -109,3 +112,9 @@ def logout():
     response = RedirectResponse("/login", status_code=303)
     response.delete_cookie("session")
     return response
+
+@router.get("/blocked_page")
+def blocked_page(request: Request):
+    return templates.TemplateResponse(
+        request, "auth/blocked.html", {"user": None}
+    )

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}{{ task.title }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('get_projects') }}">Проекты</a></li>
+    <li class="breadcrumb-item">
+      <a href="{{ url_for('get_project_by_id', p_id=task.project_id) }}">
+        {{ task.project.name }}
+      </a>
+    </li>
+    <li class="breadcrumb-item active">{{ task.title }}</li>
+  </ol>
+</nav>
+
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h1 class="h4 mb-0">{{ task.title }}</h1>
+    <form method="post" action="{{ url_for('edit_status', t_id=task.id) }}"
+          style="display: inline;">
+      <select name="status" class="form-select form-select-sm"
+              style="width: auto;"
+              onchange="this.form.submit()">
+        {% if task.status.name == 'NEW' %}
+          <option value="NEW" selected>Новая</option>
+          <option value="IN_WORK"> В работе</option>
+        {% elif task.status.name == 'IN_WORK' %}
+          <option value="IN_WORK" selected>В работе</option>
+          <option value="DONE"> Выполнена</option>
+        {% elif task.status.name == 'DONE' %}
+          <option value="DONE" selected>Выполнена</option>
+          <option value="IN_WORK">Вернуть в работу</option>
+        {% endif %}
+
+      </select>
+    </form>
+
+    <div class="d-flex gap-2">
+      <span class="badge bg-info">{{ task.status.value }}</span>
+      <a href="{{ url_for('edit_task_page', t_id=task.id) }}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-pencil"></i> Редактировать
+      </a>
+    </div>
+  </div>
+
+  <div class="card-body">
+    {% if task.description %}
+      <p class="card-text">{{ task.description }}</p>
+    {% else %}
+      <p class="card-text text-muted fst-italic">Описание не указано</p>
+    {% endif %}
+
+    {% if task.due_date %}
+      <p class="card-text"> Дедлайн: {{ task.due_date }}</p>
+    {% else %}
+      <p class="card-text fst-italic">Дедлайн не указан</p>
+    {% endif %}
+
+    <div class="row g-3 mt-2">
+      <div class="col-md-4">
+        <div class="text-muted small">Статус</div>
+        <div class="fw-semibold">{{ task.status.value }}</div>
+      </div>
+      <div class="col-md-4">
+        <div class="text-muted small">Приоритет</div>
+        <div class="fw-semibold">{{ task.priority.value }}</div>
+      </div>
+      <div class="col-md-4">
+        <div class="text-muted small">Исполнитель</div>
+        <div class="fw-semibold">
+          {% if task.user %}
+            {{ task.user.username }}
+          {% else %}
+            <span class="text-muted">Не назначен</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+      <form method="post" action="{{ url_for('delete_task', t_id=task.id) }}"
+            onsubmit="return confirm('Удалить задачу вместе с комментариями?');">
+        <button type="submit" class="btn btn-outline-danger">
+          <i class="bi bi-trash"></i> Удалить
+        </button>
+      </form>
+    </div>
+
+
+<div class="card shadow-sm" id="comments">
+  <div class="card-header bg-white">
+    <h2 class="h5 mb-0">
+      <i class="bi bi-chat-dots"></i> Комментарии
+      <span class="badge bg-secondary">{{ comments|length }}</span>
+    </h2>
+  </div>
+
+  <div class="card-body">
+    {% include "components/comment_list.html" %}
+
+    <hr>
+
+    <form method="post" action="{{ url_for('add_comment', t_id=task.id) }}">
+      <div class="mb-3">
+        <label for="text" class="form-label">Новый комментарий</label>
+        <textarea class="form-control" id="text"
+                  name="text" rows="2" maxlength="2000"
+                  placeholder="Ваш комментарий..." required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-send"></i> Добавить
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
