@@ -8,8 +8,14 @@ def can_edit_project(user: User, project: Project) -> bool:
 def can_edit_task(user: User, task: Task) -> bool:
     return user.is_admin or task.project.owner_id == user.id or task.author_id == user.id
 
+
 def can_edit_task_status(user: User, task: Task) -> bool:
-    return user.is_admin or task.project.owner_id == user.id or task.author_id == user.id or task.assignee_id == user.id
+    return (
+        user.is_admin
+        or task.project.owner_id == user.id
+        or task.author_id == user.id
+        or task.assignee_id == user.id
+    )
 
 
 def can_delete_comment(user: User, comment: Comment) -> bool:
@@ -19,8 +25,10 @@ def can_delete_comment(user: User, comment: Comment) -> bool:
 def is_admin(user: User) -> bool:
     return user.is_admin
 
+
 def can_delete_project(user: User, project: Project) -> bool:
     return project.owner_id == user.id
+
 
 def can_delete_task(user: User, task: Task) -> bool:
     return user.is_admin or task.project.owner_id == user.id or task.author_id == user.id

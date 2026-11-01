@@ -18,5 +18,5 @@ def delete_comment(c_id: int, db: Session = Depends(get_db), user: User = Depend
     if not permission_service.can_delete_comment(user, comment):
         raise HTTPException(status_code=403, detail="Нет прав")
     comment_service.delete_comment(db, comment)
-    response = RedirectResponse("/projects",status_code=303)
+    response = RedirectResponse("/projects", status_code=303)
     return response

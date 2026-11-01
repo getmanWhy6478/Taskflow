@@ -15,6 +15,7 @@ def ban_user(db: Session, user: User):
     db.refresh(user)
     return
 
+
 def unban_user(db: Session, user: User):
     user.is_banned = False
     db.commit()
@@ -28,6 +29,7 @@ def admin_user(db: Session, user: User):
     db.commit()
     db.refresh(user)
     return
+
 
 def unadmin_user(db: Session, user: User):
     user.is_admin = False

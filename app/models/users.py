@@ -1,13 +1,13 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 import sqlalchemy as sa
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
 if TYPE_CHECKING:
-    from app.models import Comment, Task, ProjectsMember, Project
+    from app.models import Comment, Project, ProjectsMember, Task
 
 
 class User(Base):
@@ -26,15 +26,14 @@ class User(Base):
     comment: Mapped[list["Comment"]] = relationship(back_populates="user")
 
     assigned_tasks: Mapped[list["Task"]] = relationship(
-        back_populates="assignee",
-        foreign_keys="Task.assignee_id"
+        back_populates="assignee", foreign_keys="Task.assignee_id"
     )
 
-
-    project: Mapped[list["Project"]] = relationship(back_populates="members", secondary="projects_members",
-        viewonly=True)
+    project: Mapped[list["Project"]] = relationship(
+        back_populates="members", secondary="projects_members", viewonly=True
+    )
 
     project_memberships: Mapped[list["ProjectsMember"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
-    my_project:Mapped["Project"] = relationship(back_populates="owner")
+    my_project: Mapped["Project"] = relationship(back_populates="owner")

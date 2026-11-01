@@ -10,9 +10,11 @@ from app.database import get_db
 from app.dependencies import require_user
 from app.forms.comment import CommentForm
 from app.forms.tasks import TaskForm
-from app.models import Priority, Status, User, Task
-from app.services import (comment_services as comment_service, permission_services as permission_service,
-                          task_services as task_service, project_services as project_services)
+from app.models import Priority, Status, Task, User
+from app.services import comment_services as comment_service
+from app.services import permission_services as permission_service
+from app.services import project_services as project_services
+from app.services import task_services as task_service
 from app.templates.templates import templates
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -24,16 +26,30 @@ def get_task(
 ):
     task = task_service.get_task_by_id(db, t_id)
     comments = task_service.get_tasks_comments(db, task)
-    return templates.TemplateResponse(request, "tasks/detail.html", {"user": user, "task": task, "comments": comments})
+    return templates.TemplateResponse(
+        request, "tasks/detail.html", {"user": user, "task": task, "comments": comments}
+    )
 
 
 @router.get("/{t_id}/edit")
-def edit_task_page(t_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def edit_task_page(
+    t_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)
+):
     task = db.get(Task, t_id)
     project = project_services.get_project_by_id(db, task.project_id)
     available_members = project_services.get_project_members(db, project)
-    return templates.TemplateResponse(request, "tasks/edit.html", {"user": user, "task": task, "field_errors": None,
-                                                                   "statuses": Status, "priorities": Priority, "members": available_members})
+    return templates.TemplateResponse(
+        request,
+        "tasks/edit.html",
+        {
+            "user": user,
+            "task": task,
+            "field_errors": None,
+            "statuses": Status,
+            "priorities": Priority,
+            "members": available_members,
+        },
+    )
 
 
 @router.post("/{t_id}/edit")
@@ -68,17 +84,23 @@ def edit_task(
     except ValidationError as e:
         field_errors = {}
         for error in e.errors():
-            field = error['loc'][0]
-            msg = error['msg']
+            field = error["loc"][0]
+            msg = error["msg"]
             field_errors.setdefault(field, []).append(msg)
-        return templates.TemplateResponse(request, "task/edit.html", {"field_errors": field_errors, "user": user,
-        "title":title,
-        "description":description,
-        "status" : status,
-        "priority" : priority,
-        "assignee_id" : assignee_id,
-        "due_date" : due_date
-        })
+        return templates.TemplateResponse(
+            request,
+            "task/edit.html",
+            {
+                "field_errors": field_errors,
+                "user": user,
+                "title": title,
+                "description": description,
+                "status": status,
+                "priority": priority,
+                "assignee_id": assignee_id,
+                "due_date": due_date,
+            },
+        )
     task_service.update_task(db, task, form)
     response = RedirectResponse(f"/tasks/{t_id}", status_code=303)
     return response
@@ -95,20 +117,17 @@ def edit_status(
     if not permission_service.can_edit_task_status(user, task):
         raise HTTPException(status_code=403, detail="Нет прав")
 
-    ALLOWED_TRANSITIONS = {
+    allowed_transitions = {
         "Новая": ["В работе"],
         "В работе": ["Выполнена"],
-        "Выполнена": ["В работе"]
+        "Выполнена": ["В работе"],
     }
 
     current_status = task.status.value
     next_status = Status[status].value
 
-    if next_status not in ALLOWED_TRANSITIONS[current_status]:
-        raise HTTPException(
-            400,
-            f"Переход из '{current_status}' в '{next_status}' не разрешён"
-        )
+    if next_status not in allowed_transitions[current_status]:
+        raise HTTPException(400, f"Переход из '{current_status}' в '{next_status}' не разрешён")
     print(next_status)
     task_service.update_task_status(db, task, next_status)
     return RedirectResponse(
@@ -118,9 +137,7 @@ def edit_status(
 
 
 @router.post("/{t_id}/delete")
-def delete_task(
-    t_id: int, user: User = Depends(require_user), db: Session = Depends(get_db)
-):
+def delete_task(t_id: int, user: User = Depends(require_user), db: Session = Depends(get_db)):
     task = task_service.get_task_by_id(db, t_id)
     if not permission_service.can_delete_task(user, task):
         raise HTTPException(status_code=403, detail="Нет прав")

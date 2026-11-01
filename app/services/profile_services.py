@@ -13,6 +13,7 @@ def change_name(db: Session, user: User, form: ChangeUser) -> None:
     db.refresh(user)
     return
 
+
 def change_password(db: Session, user: User, form: ChangePassword) -> None:
     hashed_password = auth_services.hash_password(form.password)
     user.password_hash = hashed_password

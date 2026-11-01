@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, Request, Query
+from fastapi import APIRouter, Depends, Form, Request
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from starlette.responses import RedirectResponse
@@ -62,7 +62,7 @@ def register_user(
             status_code=400,
         )
     hashed_password = hash_password(form.password)
-    auth_services.add_user(form, db,  hashed_password)
+    auth_services.add_user(form, db, hashed_password)
     return RedirectResponse("/login", status_code=303)
 
 
@@ -89,10 +89,11 @@ def login_user(
         )
     if user.is_banned:
         return templates.TemplateResponse(
-            request, "auth/login.html",
+            request,
+            "auth/login.html",
             {
                 "error": "Ваш аккаунт заблокирован. Обратитесь к администратору.",
-                "username": username
+                "username": username,
             },
             status_code=403,
         )
@@ -113,8 +114,7 @@ def logout():
     response.delete_cookie("session")
     return response
 
+
 @router.get("/blocked_page")
 def blocked_page(request: Request):
-    return templates.TemplateResponse(
-        request, "auth/blocked.html", {"user": None}
-    )
+    return templates.TemplateResponse(request, "auth/blocked.html", {"user": None})

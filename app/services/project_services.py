@@ -1,14 +1,12 @@
 from datetime import datetime
 
-from sqlalchemy import select, asc, desc, case, or_, func
+from sqlalchemy import asc, case, desc, func, or_, select
 from sqlalchemy.orm import Session
 
-from typing import List
-
 from app.forms.delete import DeleteForm
-from app.forms.project import ProjectForm
 from app.forms.member import MemberForm
-from app.models import Task, User, ProjectsMember, Project, Priority, Status
+from app.forms.project import ProjectForm
+from app.models import Priority, Project, ProjectsMember, Task, User
 
 
 def create_project(db: Session, form: ProjectForm, user: User) -> Project:
@@ -44,7 +42,9 @@ def add_member(db: Session, project: Project, form: MemberForm) -> None:
 
 
 def get_all_projects(db: Session, user: User) -> list[Project]:
-    found = select(Project).where(or_(Project.owner_id == user.id, Project.members.any(User.id == user.id)))
+    found = select(Project).where(
+        or_(Project.owner_id == user.id, Project.members.any(User.id == user.id))
+    )
     return list(db.scalars(found))
 
 
@@ -52,12 +52,23 @@ def get_project_by_id(db: Session, p_id: int) -> Project:
     found = select(Project).where(Project.id == p_id)
     return db.scalar(found)
 
-def get_project_members(db: Session, project: Project) -> List[User]:
+
+def get_project_members(db: Session, project: Project) -> list[User]:
     return list(project.members)
 
-def get_project_tasks(db: Session, p_id: int, status: str, priority: str, filter_member: str,
-                      order: str, sort_by: str, search: str, page: int,
-    per_page: int) -> tuple[list[Task], int]:
+
+def get_project_tasks(
+    db: Session,
+    p_id: int,
+    status: str,
+    priority: str,
+    filter_member: str,
+    order: str,
+    sort_by: str,
+    search: str,
+    page: int,
+    per_page: int,
+) -> tuple[list[Task], int]:
     found = select(Task).where(Task.project_id == p_id)
 
     if status != "":
@@ -74,24 +85,20 @@ def get_project_tasks(db: Session, p_id: int, status: str, priority: str, filter
             (Task.priority == Priority.LOW, 1),
             (Task.priority == Priority.MEDIUM, 2),
             (Task.priority == Priority.HIGH, 3),
-            else_=0
+            else_=0,
         )
     }
 
     if search != "":
         search = search.lower()
-        found = found.where(or_(Task.title.like(f"%{search}%"), Task.description.like(f"%{search}%")))
+        found = found.where(
+            or_(Task.title.like(f"%{search}%"), Task.description.like(f"%{search}%"))
+        )
 
-    if sort_by in enum_orders:
-        column = enum_orders[sort_by]
-    else:
-        column = getattr(Task, sort_by, None)
+    column = enum_orders[sort_by] if sort_by in enum_orders else getattr(Task, sort_by, None)
 
     if column is not None:
-        if order == "asc":
-            found = found.order_by(asc(column))
-        else:
-            found = found.order_by(desc(column))
+        found = found.order_by(asc(column)) if order == "asc" else found.order_by(desc(column))
     else:
         found = found.order_by(desc(Task.created_at))
 
@@ -108,12 +115,14 @@ def get_project_tasks(db: Session, p_id: int, status: str, priority: str, filter
 
     return list(db.scalars(found)), total_count
 
-def get_available_users(db: Session, p_id: int, users: List[User]) -> List[User]:
-    member_ids = set(db.scalars(
-        select(ProjectsMember.user_id).where(ProjectsMember.project_id == p_id)
-    ))
+
+def get_available_users(db: Session, p_id: int, users: list[User]) -> list[User]:
+    member_ids = set(
+        db.scalars(select(ProjectsMember.user_id).where(ProjectsMember.project_id == p_id))
+    )
     users_not_in_project = [u for u in users if u.id not in member_ids]
     return users_not_in_project
+
 
 def delete_member(db: Session, project: Project, form: DeleteForm) -> None:
     project_member = ProjectsMember(user_id=form.member_id, project_id=project.id, role=form.role)

@@ -8,13 +8,15 @@ from starlette.responses import RedirectResponse
 
 from app.database import get_db
 from app.dependencies import require_user
+from app.forms.delete import DeleteForm
+from app.forms.member import MemberForm
 from app.forms.project import ProjectForm
 from app.forms.tasks import TaskForm
-from app.forms.member import MemberForm
-from app.forms.delete import DeleteForm
 from app.models import Priority, Project, Status, User
-from app.services import (permission_services as permission_service, project_services as project_service,
-                          task_services as task_service, admin_services as admin_service, search_services as search_service)
+from app.services import admin_services as admin_service
+from app.services import permission_services as permission_service
+from app.services import project_services as project_service
+from app.services import task_services as task_service
 from app.templates.templates import templates
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -36,7 +38,9 @@ def get_projects(
 
 @router.get("/create")
 def create_project_page(request: Request, user: User = Depends(require_user)):
-    return templates.TemplateResponse(request, "projects/create.html", {"user": user, "field_errors": None})
+    return templates.TemplateResponse(
+        request, "projects/create.html", {"user": user, "field_errors": None}
+    )
 
 
 @router.post("/create")
@@ -55,26 +59,39 @@ def create_project(
             field = error["loc"][0]
             message = error["msg"]
             field_errors.setdefault(field, []).append(message)
-        return templates.TemplateResponse(request, "projects/create.html", {"user": user, "fields_errors": field_errors,
-                                                                          "name": name, "description": description})
+        return templates.TemplateResponse(
+            request,
+            "projects/create.html",
+            {"user": user, "fields_errors": field_errors, "name": name, "description": description},
+        )
     project = project_service.create_project(db, form, user)
     response = RedirectResponse("/projects", status_code=303)
-    p_m = MemberForm(member_id=user.id, role='Владелец')
+    p_m = MemberForm(member_id=user.id, role="Владелец")
     project_service.add_member(db, project, p_m)
     return response
 
 
 @router.get("/{p_id}")
 def get_project_by_id(
-    request: Request, p_id: int, db: Session = Depends(get_db), user: User = Depends(require_user),
-        status: str = Query(""), priority: str = Query(""), sort_by: str = Query("created_at"), filter_member: str = Query(""),
-        sort_order: str = Query("desc"), search: str = Query(""), page: int = Query(1, ge=1)
+    request: Request,
+    p_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+    status: str = Query(""),
+    priority: str = Query(""),
+    sort_by: str = Query("created_at"),
+    filter_member: str = Query(""),
+    sort_order: str = Query("desc"),
+    search: str = Query(""),
+    page: int = Query(1, ge=1),
 ):
     project = project_service.get_project_by_id(db, p_id)
     all_users = admin_service.get_all_users(db)
     available_users = project_service.get_available_users(db, p_id, all_users)
 
-    tasks, total_count = project_service.get_project_tasks(db, p_id, status, priority, filter_member, sort_order, sort_by, search, page, TASKS_PER_PAGE)
+    tasks, total_count = project_service.get_project_tasks(
+        db, p_id, status, priority, filter_member, sort_order, sort_by, search, page, TASKS_PER_PAGE
+    )
 
     total_pages = max(1, (total_count + TASKS_PER_PAGE - 1) // TASKS_PER_PAGE)
 
@@ -110,10 +127,13 @@ def get_project_by_id(
 
 
 @router.get("/{p_id}/edit")
-def edit_project_page(p_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def edit_project_page(
+    p_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)
+):
     project = db.get(Project, p_id)
-    return templates.TemplateResponse(request, "projects/edit.html", {"user": user, "field_errors": None,
-                                                                      "project": project})
+    return templates.TemplateResponse(
+        request, "projects/edit.html", {"user": user, "field_errors": None, "project": project}
+    )
 
 
 @router.post("/{p_id}/edit")
@@ -138,17 +158,18 @@ def edit_project(
             field = error["loc"][0]
             message = error["msg"]
             field_errors.setdefault(field, []).append(message)
-        return templates.TemplateResponse(request, "projects/edit.html", {"user": user, "name": name, "description": description,
-                                                                             "field_errors":field_errors})
+        return templates.TemplateResponse(
+            request,
+            "projects/edit.html",
+            {"user": user, "name": name, "description": description, "field_errors": field_errors},
+        )
     project_service.edit_project(db, project, form)
     response = RedirectResponse(f"/projects/{p_id}", status_code=303)
     return response
 
 
 @router.post("/{p_id}/delete")
-def delete_project(
-    p_id: int, user: User = Depends(require_user), db: Session = Depends(get_db)
-):
+def delete_project(p_id: int, user: User = Depends(require_user), db: Session = Depends(get_db)):
     project = project_service.get_project_by_id(db, p_id)
     if not permission_service.can_delete_project(user, project):
         raise HTTPException(status_code=403, detail="Нет прав")
@@ -193,15 +214,22 @@ def get_project_tasks(
 
 
 @router.get("/{p_id}/tasks/create")
-def create_task_page(request: Request, p_id: int,  db: Session = Depends(get_db), user: User = Depends(require_user)):
+def create_task_page(
+    request: Request, p_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)
+):
     project = db.get(Project, p_id)
 
-    return templates.TemplateResponse(request, "tasks/create.html", {"user": user,
-    "project": project,
-    "field_errors": None,
-    "members": project_service.get_project_members(db, project),
-    "statuses": Status,
-    "priorities": Priority}
+    return templates.TemplateResponse(
+        request,
+        "tasks/create.html",
+        {
+            "user": user,
+            "project": project,
+            "field_errors": None,
+            "members": project_service.get_project_members(db, project),
+            "statuses": Status,
+            "priorities": Priority,
+        },
     )
 
 
@@ -232,7 +260,7 @@ def create_task(
             status=status,
             priority=priority,
             assignee_id=assignee_id,
-            due_date=due_date
+            due_date=due_date,
         )
     except ValidationError as e:
         fields_errors = {}
@@ -240,19 +268,24 @@ def create_task(
             field = error["loc"][0]
             message = error["msg"]
             fields_errors.setdefault(field, []).append(message)
-        return templates.TemplateResponse(request, "tasks/create.html", {"user": user,
-            "project": project,
-            "field_errors": fields_errors,
-            "title": title,
-            "description": description,
-            "due_date": due_date,
-            "status": status,
-            "priority" :priority,
-            "assignee_id" :assignee_id,
-            "members": project_service.get_project_members(db, project),
-            "statuses": Status,
-            "priorities": Priority
-            })
+        return templates.TemplateResponse(
+            request,
+            "tasks/create.html",
+            {
+                "user": user,
+                "project": project,
+                "field_errors": fields_errors,
+                "title": title,
+                "description": description,
+                "due_date": due_date,
+                "status": status,
+                "priority": priority,
+                "assignee_id": assignee_id,
+                "members": project_service.get_project_members(db, project),
+                "statuses": Status,
+                "priorities": Priority,
+            },
+        )
     task_service.create_task(db, user, p_id, form)
     response = RedirectResponse(f"/projects/{p_id}", status_code=303)
     return response

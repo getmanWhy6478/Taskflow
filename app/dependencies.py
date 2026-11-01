@@ -1,9 +1,5 @@
-from urllib.parse import quote
-
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-
-
 from starlette.responses import RedirectResponse
 
 from app.database import get_db
@@ -19,7 +15,9 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User | 
     return db.get(User, user_id) if user_id else None
 
 
-def require_user(request: Request, user: User | None = Depends(get_current_user)) -> User|RedirectResponse:
+def require_user(
+    request: Request, user: User | None = Depends(get_current_user)
+) -> User | RedirectResponse:
     if user is None:
         raise HTTPException(status_code=303, headers={"Location": "/login"})
     if user.is_banned:
@@ -29,6 +27,7 @@ def require_user(request: Request, user: User | None = Depends(get_current_user)
             status_code=303,
         )
     return user
+
 
 def require_admin(user: User = Depends(require_user)) -> User:
     if not user.is_admin:
