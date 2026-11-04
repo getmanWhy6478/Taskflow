@@ -9,6 +9,6 @@ def search(db: Session, query: str) -> list[Task]:
     return list(db.scalars(found))
 
 
-def search_user_by_id(db: Session, username: str) -> int:
-    u_id = select(User.id).where(User.username == username)
-    return db.scalar(u_id)
+def search_user_by_username(db: Session, username: str) -> User:
+    user = select(User).where(User.username == username)
+    return db.scalar(user)

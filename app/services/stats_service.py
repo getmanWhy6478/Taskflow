@@ -23,7 +23,7 @@ def get_stats(db: Session, user: User) -> dict:
         .select_from(Task)
         .where(
             Task.assignee_id == user.id,
-            Task.status == "COMPLETE",
+            Task.status == "DONE",
             datetime.now() - Task.updated_at < timedelta(days=7),
         )
     )
@@ -31,7 +31,7 @@ def get_stats(db: Session, user: User) -> dict:
         select(func.count())
         .select_from(Task)
         .where(
-            Task.assignee_id == user.id, Task.status != "COMPLETE", datetime.today() > Task.due_date
+            Task.assignee_id == user.id, Task.status != "DONE", datetime.today() > Task.due_date
         )
     )
     stats = {

@@ -16,6 +16,7 @@
         {% endif %}
 
         <form method="post" action="{{ url_for('login_user') }}" novalidate>
+           <input type="hidden" name="next_page" value="{{ next_page }}">
           <div class="mb-3">
             <label for="username" class="form-label">Логин</label>
             <div class="input-group">

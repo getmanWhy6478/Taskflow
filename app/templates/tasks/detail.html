@@ -23,15 +23,15 @@
       <select name="status" class="form-select form-select-sm"
               style="width: auto;"
               onchange="this.form.submit()">
-        {% if task.status.name == 'NEW' %}
-          <option value="NEW" selected>Новая</option>
-          <option value="IN_WORK"> В работе</option>
-        {% elif task.status.name == 'IN_WORK' %}
-          <option value="IN_WORK" selected>В работе</option>
-          <option value="DONE"> Выполнена</option>
-        {% elif task.status.name == 'DONE' %}
-          <option value="DONE" selected>Выполнена</option>
-          <option value="IN_WORK">Вернуть в работу</option>
+        {% if task.status.value == 'Новая' %}
+          <option value="Новая" selected>Новая</option>
+          <option value="В работе"> В работе</option>
+        {% elif task.status.value == 'В работе' %}
+          <option value="В работе" selected>В работе</option>
+          <option value="Выполнена"> Выполнена</option>
+        {% elif task.status.value == 'Выполнена' %}
+          <option value="Выполнена" selected>Выполнена</option>
+          <option value="В работе">Вернуть в работу</option>
         {% endif %}
 
       </select>

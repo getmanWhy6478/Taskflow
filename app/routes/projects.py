@@ -7,7 +7,7 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from app.database import get_db
-from app.dependencies import require_user
+from app.dependencies import require_user, get_project_with_access
 from app.forms.delete import DeleteForm
 from app.forms.member import MemberForm
 from app.forms.project import ProjectForm
@@ -84,8 +84,8 @@ def get_project_by_id(
     sort_order: str = Query("desc"),
     search: str = Query(""),
     page: int = Query(1, ge=1),
+    project: Project = Depends(get_project_with_access),
 ):
-    project = project_service.get_project_by_id(db, p_id)
     all_users = admin_service.get_all_users(db)
     available_users = project_service.get_available_users(db, p_id, all_users)
 
@@ -128,9 +128,12 @@ def get_project_by_id(
 
 @router.get("/{p_id}/edit")
 def edit_project_page(
-    p_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)
+    p_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+    project: Project = Depends(get_project_with_access),
 ):
-    project = db.get(Project, p_id)
     return templates.TemplateResponse(
         request, "projects/edit.html", {"user": user, "field_errors": None, "project": project}
     )
@@ -144,8 +147,8 @@ def edit_project(
     name: str = Form(...),
     description: str = Form(...),
     db: Session = Depends(get_db),
+    project: Project = Depends(get_project_with_access),
 ):
-    project = project_service.get_project_by_id(db, p_id)
     name = name.lower()
     description = description.lower()
     if not permission_service.can_edit_project(user, project):
@@ -169,8 +172,12 @@ def edit_project(
 
 
 @router.post("/{p_id}/delete")
-def delete_project(p_id: int, user: User = Depends(require_user), db: Session = Depends(get_db)):
-    project = project_service.get_project_by_id(db, p_id)
+def delete_project(
+    p_id: int,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+    project: Project = Depends(get_project_with_access),
+):
     if not permission_service.can_delete_project(user, project):
         raise HTTPException(status_code=403, detail="Нет прав")
     project_service.delete_project(db, project)
@@ -186,8 +193,8 @@ def manage_member(
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
     action: str = Query(""),
+    project: Project = Depends(get_project_with_access),
 ):
-    project = project_service.get_project_by_id(db, p_id)
     if not permission_service.can_edit_project(user, project):
         raise HTTPException(status_code=403, detail="Нет прав")
     if action == "add":
@@ -202,10 +209,13 @@ def manage_member(
 
 @router.get("/{p_id}/tasks")
 def get_project_tasks(
-    request: Request, p_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)
+    request: Request,
+    p_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+    project: Project = Depends(get_project_with_access),
 ):
     tasks = project_service.get_project_tasks(db, p_id, "", "", "", "", "")
-    project = db.get(Project, p_id)
     return templates.TemplateResponse(
         request,
         "projects/tasks.html",
@@ -215,9 +225,12 @@ def get_project_tasks(
 
 @router.get("/{p_id}/tasks/create")
 def create_task_page(
-    request: Request, p_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)
+    request: Request,
+    p_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+    project: Project = Depends(get_project_with_access),
 ):
-    project = db.get(Project, p_id)
 
     return templates.TemplateResponse(
         request,
@@ -238,19 +251,19 @@ def create_task(
     request: Request,
     p_id: int,
     title: str = Form(...),
-    description: str = Form(...),
-    status: Status = Form(...),
+    description: str = Form(""),
+    status: Status = Form(default=Status.IN_WORK),
     priority: Priority = Form(default=Priority.MEDIUM),
     assignee_id: str = Form(""),
     due_date: str = Form(""),
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
+    project: Project = Depends(get_project_with_access),
 ):
     title = title.lower()
     description = description.lower()
     assignee_id = int(assignee_id) if assignee_id else None
     due_date = date.fromisoformat(due_date) if due_date else None
-    project = db.get(Project, p_id)
     if project is None:
         raise HTTPException(404, "Проект не найден")
     try:

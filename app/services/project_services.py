@@ -109,10 +109,6 @@ def get_project_tasks(
     offset = (page - 1) * per_page
     found = found.limit(per_page).offset(offset)
 
-    t_c = select(func.count()).select_from(found.subquery())
-
-    print(db.scalar(t_c) or 0)
-
     return list(db.scalars(found)), total_count
 
 

@@ -117,10 +117,10 @@
     </select>
   </div>
   <div class="col-md-4">
-    <select name="sort_member" class="form-select">
+    <select name="filter_member" class="form-select">
       <option value="">Все пользователи</option>
       {% for u in project.members %}
-        <option value="{{ u.id }}" {% if sort_member == u.id|string %}selected{% endif %}>
+        <option value="{{ u.id }}" {% if filter_member == u.id|string %}selected{% endif %}>
           {{ u.username }}
         </option>
       {% endfor %}
@@ -232,13 +232,13 @@
                   </span>
                 </td>
                 <td>
-                  {% if task.user %}
+                  {% if task.assignee %}
                     <div class="d-flex align-items-center gap-2">
                       <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center"
                            style="width: 28px; height: 28px;">
                         <i class="bi bi-person-fill small"></i>
                       </div>
-                      <span>{{ task.user.display_name or task.user.username }}</span>
+                      <span>{{ task.assignee.display_name or task.assignee.username }}</span>
                     </div>
                   {% else %}
                     <span class="text-muted small">

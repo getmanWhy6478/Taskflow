@@ -7,7 +7,7 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from app.database import get_db
-from app.dependencies import require_user
+from app.dependencies import require_user, get_task_with_access
 from app.forms.comment import CommentForm
 from app.forms.tasks import TaskForm
 from app.models import Priority, Status, Task, User
@@ -22,9 +22,12 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 @router.get("/{t_id}")
 def get_task(
-    request: Request, t_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)
+    request: Request,
+    t_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+    task=Depends(get_task_with_access),
 ):
-    task = task_service.get_task_by_id(db, t_id)
     comments = task_service.get_tasks_comments(db, task)
     return templates.TemplateResponse(
         request, "tasks/detail.html", {"user": user, "task": task, "comments": comments}
@@ -33,9 +36,12 @@ def get_task(
 
 @router.get("/{t_id}/edit")
 def edit_task_page(
-    t_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)
+    t_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+    task=Depends(get_task_with_access),
 ):
-    task = db.get(Task, t_id)
     project = project_services.get_project_by_id(db, task.project_id)
     available_members = project_services.get_project_members(db, project)
     return templates.TemplateResponse(
@@ -64,12 +70,12 @@ def edit_task(
     description: str = Form(...),
     status: Status = Form(...),
     priority: Priority = Form(...),
+    task=Depends(get_task_with_access),
 ):
     title = title.lower()
     description = description.lower()
     assignee_id = int(assignee_id) if assignee_id else None
     due_date = date.fromisoformat(due_date) if due_date else None
-    task = task_service.get_task_by_id(db, t_id)
     if not permission_service.can_edit_task(user, task):
         raise HTTPException(status_code=403, detail="Нет прав")
     try:
@@ -89,7 +95,7 @@ def edit_task(
             field_errors.setdefault(field, []).append(msg)
         return templates.TemplateResponse(
             request,
-            "task/edit.html",
+            "tasks/edit.html",
             {
                 "field_errors": field_errors,
                 "user": user,
@@ -112,8 +118,8 @@ def edit_status(
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
     status: str = Form(...),
+    task=Depends(get_task_with_access),
 ):
-    task = task_service.get_task_by_id(db, t_id)
     if not permission_service.can_edit_task_status(user, task):
         raise HTTPException(status_code=403, detail="Нет прав")
 
@@ -124,11 +130,10 @@ def edit_status(
     }
 
     current_status = task.status.value
-    next_status = Status[status].value
+    next_status = status
 
     if next_status not in allowed_transitions[current_status]:
         raise HTTPException(400, f"Переход из '{current_status}' в '{next_status}' не разрешён")
-    print(next_status)
     task_service.update_task_status(db, task, next_status)
     return RedirectResponse(
         f"/tasks/{t_id}",
@@ -137,8 +142,12 @@ def edit_status(
 
 
 @router.post("/{t_id}/delete")
-def delete_task(t_id: int, user: User = Depends(require_user), db: Session = Depends(get_db)):
-    task = task_service.get_task_by_id(db, t_id)
+def delete_task(
+    t_id: int,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+    task=Depends(get_task_with_access),
+):
     if not permission_service.can_delete_task(user, task):
         raise HTTPException(status_code=403, detail="Нет прав")
     task_service.delete_task(db, task)
@@ -152,8 +161,8 @@ def add_comment(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
     text: str = Form(...),
+    task=Depends(get_task_with_access),
 ):
-    task = task_service.get_task_by_id(db, t_id)
     form = CommentForm(text=text)
     comment_service.create_comment(db, form, task, user)
     response = RedirectResponse(f"/tasks/{t_id}", status_code=303)
