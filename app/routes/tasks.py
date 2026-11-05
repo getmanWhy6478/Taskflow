@@ -7,10 +7,10 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from app.database import get_db
-from app.dependencies import require_user, get_task_with_access
+from app.dependencies import get_task_with_access, require_user
 from app.forms.comment import CommentForm
 from app.forms.tasks import TaskForm
-from app.models import Priority, Status, Task, User
+from app.models import Priority, Status, User
 from app.services import comment_services as comment_service
 from app.services import permission_services as permission_service
 from app.services import project_services as project_services

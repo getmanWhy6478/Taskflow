@@ -1,13 +1,10 @@
-from urllib.parse import quote
-
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from starlette.responses import RedirectResponse
 
 from app.database import get_db
 from app.forms import project
-from app.models import User, Project, Task, Comment
-
+from app.models import Comment, Project, Task, User
 
 
 class AuthRequiredException(HTTPException):

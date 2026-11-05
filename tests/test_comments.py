@@ -1,16 +1,13 @@
+from sqlalchemy import select
 from starlette.testclient import TestClient
 
-from app.models import Project, Status, Priority, Task
-from sqlalchemy import select
-
-from tests.conftest import db_session
+from app.models import Priority, Project, Status, Task
 
 
 class TestCommentCreation:
     def test_create_comment_success(
         self, client: TestClient, create_user, create_project, db_session
     ):
-        from app.models import Task
 
         user = create_user("commenter")
 
@@ -43,7 +40,6 @@ class TestCommentCreation:
 
 class TestCommentRead:
     def test_view_comments(self, client: TestClient, create_user, create_project, db_session):
-        from app.models import Task, Comment
 
         user = create_user("commenter")
 
@@ -76,7 +72,7 @@ class TestCommentRead:
 
 class TestCommentDelete:
     def test_delete_comment(self, client: TestClient, create_user, create_project, db_session):
-        from app.models import Task, Comment
+        from app.models import Comment
 
         user = create_user("commenter")
 
@@ -114,11 +110,11 @@ class TestCommentDelete:
     def test_cannot_delete_others_comment(
         self, client: TestClient, create_user, create_project, db_session
     ):
-        from app.models import Task, Comment
+        from app.models import Comment
 
         owner = create_user("owner")
         client.post("/login", data={"username": "owner", "password": "testpass123"})
-        outsider = create_user("outsider")
+        create_user("outsider")
         client.post(
             "/projects/create", data={"name": "Test Project", "description": "Test Description"}
         )

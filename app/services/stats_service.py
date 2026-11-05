@@ -30,9 +30,7 @@ def get_stats(db: Session, user: User) -> dict:
     tasks_count_wasted = db.scalar(
         select(func.count())
         .select_from(Task)
-        .where(
-            Task.assignee_id == user.id, Task.status != "DONE", datetime.today() > Task.due_date
-        )
+        .where(Task.assignee_id == user.id, Task.status != "DONE", datetime.today() > Task.due_date)
     )
     stats = {
         "new_tasks_count": tasks_count_new,

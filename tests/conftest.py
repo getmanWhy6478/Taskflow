@@ -1,19 +1,16 @@
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
 from app.main import app
-from app.services.auth_services import hash_password
-
-from app.templates.templates import templates
-
-from app.models.users import User
-from app.models.projects import Project
 from app.models.project_members import ProjectsMember
-
+from app.models.projects import Project
+from app.models.users import User
+from app.services.auth_services import hash_password
+from app.templates.templates import templates
 
 TEST_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(

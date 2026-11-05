@@ -3,8 +3,7 @@ from sqlalchemy.orm import Session
 from starlette.responses import RedirectResponse
 
 from app.database import get_db
-from app.dependencies import require_user, delete_comment_with_access
-from app.models import Comment
+from app.dependencies import delete_comment_with_access, require_user
 from app.models.users import User
 from app.services import comment_services as comment_service
 

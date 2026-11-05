@@ -1,14 +1,4 @@
 
-.task-card {
-  border-left: 4px solid var(--bs-border-color);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.task-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
-}
-
 .task-priority-high   { border-left-color: var(--bs-danger); }
 .task-priority-medium { border-left-color: var(--bs-warning); }
 .task-priority-low    { border-left-color: var(--bs-success); }
@@ -22,7 +12,3 @@
 }
 
 form + form { margin-top: 0; }
-
-@media (max-width: 576px) {
-  .breadcrumb { font-size: 0.9rem; }
-}

@@ -4,17 +4,12 @@ from urllib.parse import quote
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException
 from starlette.middleware.sessions import SessionMiddleware
-
-from app.dependencies import AuthRequiredException
-
-from app.config import settings
-
 from starlette.requests import Request
 
-from starlette.exceptions import HTTPException
-
-from app.database import Base, engine
+from app.config import settings
+from app.dependencies import AuthRequiredException
 from app.routes.admin import router as admin_router
 from app.routes.auth import router as auth_router
 from app.routes.comments import router as comment_router
@@ -85,6 +80,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
             },
             status_code=exc.status_code,
         )
+
 
 @app.exception_handler(AuthRequiredException)
 async def auth_required_handler(request: Request, exc: AuthRequiredException):

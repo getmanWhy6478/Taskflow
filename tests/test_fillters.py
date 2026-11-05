@@ -1,16 +1,13 @@
+from sqlalchemy import select
 from starlette.testclient import TestClient
 
-from app.models import Project, Status, Priority, Task
-from sqlalchemy import select
-
-from tests.conftest import db_session
+from app.models import Priority, Project, Status, Task
 
 
 class TestTaskFiltering:
     def test_filter_by_status(
         self, client: TestClient, create_user, create_project, db_session, template_context
     ):
-        from app.models import Task
 
         user = create_user("member")
 
@@ -45,7 +42,6 @@ class TestTaskFiltering:
     def test_filter_by_priority(
         self, client: TestClient, create_user, create_project, db_session, template_context
     ):
-        from app.models import Task
 
         user = create_user("member")
 
@@ -82,7 +78,6 @@ class TestTaskSearch:
     def test_search_by_title(
         self, client: TestClient, create_user, create_project, db_session, template_context
     ):
-        from app.models import Task
 
         user = create_user("member")
 
@@ -113,7 +108,6 @@ class TestPagination:
     def test_pagination_default_page(
         self, client: TestClient, create_user, create_project, db_session, template_context
     ):
-        from app.models import Task
 
         user = create_user("member")
 
@@ -139,7 +133,6 @@ class TestPagination:
     def test_pagination_second_page(
         self, client: TestClient, create_user, create_project, db_session, template_context
     ):
-        from app.models import Task
 
         user = create_user("member")
 
@@ -167,7 +160,6 @@ class TestPagination:
     def test_pagination_preserves_filters(
         self, client: TestClient, create_user, create_project, db_session, template_context
     ):
-        from app.models import Task
 
         user = create_user("member")
 

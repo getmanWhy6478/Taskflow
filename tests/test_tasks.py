@@ -1,9 +1,7 @@
+from sqlalchemy import select
 from starlette.testclient import TestClient
 
-from app.models import Project, Status, Priority, Task
-from sqlalchemy import select
-
-from tests.conftest import db_session
+from app.models import Priority, Project, Status, Task
 
 
 class TestTaskCreation:
@@ -27,14 +25,13 @@ class TestTaskCreation:
             },
             follow_redirects=False,
         )
-        task = db_session.scalar(select(Task).where(Task.title == "New Task"))
+        db_session.scalar(select(Task).where(Task.title == "New Task"))
         assert response.status_code == 303
 
 
 class TestTaskRead:
     def test_view_task(self, client: TestClient, create_user, create_project, db_session):
-        from app.models import Task, Project
-        from app.models import Priority, Status
+        from app.models import Priority, Project, Status, Task
 
         user = create_user("viewer")
 

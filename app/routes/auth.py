@@ -1,6 +1,6 @@
 from urllib.parse import unquote
 
-from fastapi import APIRouter, Depends, Form, Request, Query
+from fastapi import APIRouter, Depends, Form, Query, Request
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from starlette.responses import RedirectResponse
@@ -10,8 +10,8 @@ from app.forms.login import LoginForm
 from app.forms.register import RegisterForm
 from app.models.users import User
 from app.services import auth_services as auth_services
-from app.services.auth_services import hash_password
 from app.services import search_services as search_service
+from app.services.auth_services import hash_password
 from app.templates.templates import templates
 
 router = APIRouter(tags=["auth"])
@@ -70,14 +70,15 @@ def register_user(
 
 
 @router.get("/login")
-def login_page(request: Request, next_page: str = Query(""), db:Session = Depends(get_db)):
+def login_page(request: Request, next_page: str = Query(""), db: Session = Depends(get_db)):
     user_id = request.session.get("user_id")
     if user_id:
         user = db.get(User, user_id)
-        if user and not user.is_banned:
-            if next_page and next_page.startswith("/"):
-                return RedirectResponse(unquote(next_page), status_code=303)
-    return templates.TemplateResponse(request, "auth/login.html", {"user": None, "next_page": next_page})
+        if user and not user.is_banned and next_page and next_page.startswith("/"):
+            return RedirectResponse(unquote(next_page), status_code=303)
+    return templates.TemplateResponse(
+        request, "auth/login.html", {"user": None, "next_page": next_page}
+    )
 
 
 @router.post("/login")
@@ -86,7 +87,7 @@ def login_user(
     username: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db),
-    next_page: str = Form("")
+    next_page: str = Form(""),
 ):
     form = LoginForm(username=username, password=password)
     user = search_service.search_user_by_username(db, form.username)
@@ -94,8 +95,11 @@ def login_user(
         return templates.TemplateResponse(
             request,
             "auth/login.html",
-            {"user": None, "error": "No user with that username exists or incorrect password.",
-             "next_page": next_page},
+            {
+                "user": None,
+                "error": "No user with that username exists or incorrect password.",
+                "next_page": next_page,
+            },
             status_code=401,
         )
     if user.is_banned:

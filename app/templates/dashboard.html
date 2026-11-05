@@ -96,7 +96,7 @@
               </div>
               <small class="text-muted">
                 <i class="bi bi-folder"></i> {{ task.project.name }}
-                {% if task.created_at %}
+                {% if task.due_date %}
                   · <i class="bi bi-calendar"></i> {{ task.due_date.strftime("%d.%m.%Y") }}
                 {% endif %}
               </small>

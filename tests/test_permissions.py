@@ -1,9 +1,7 @@
+from sqlalchemy import select
 from starlette.testclient import TestClient
 
 from app.models import Project
-from sqlalchemy import select
-
-from tests.conftest import db_session
 
 
 class TestGuestAccess:
@@ -21,7 +19,7 @@ class TestProjectPermissions:
     def test_member_can_view_project(
         self, client: TestClient, create_user, create_project, db_session
     ):
-        user = create_user("member")
+        create_user("member")
 
         client.post("/login", data={"username": "member", "password": "testpass123"})
 
@@ -38,7 +36,7 @@ class TestProjectPermissions:
         self, client: TestClient, create_user, create_project
     ):
         owner = create_user("owner")
-        outsider = create_user("outsider")
+        create_user("outsider")
         project = create_project("Private Project", owner.id)
 
         client.post(
@@ -52,7 +50,7 @@ class TestProjectPermissions:
 
     def test_only_owner_can_delete_project(self, client: TestClient, create_user, create_project):
         owner = create_user("owner")
-        member = create_user("member")
+        create_user("member")
         project = create_project("Test Project", owner.id)
 
         client.post("/login", data={"username": "member", "password": "testpass123"})
@@ -63,14 +61,14 @@ class TestProjectPermissions:
 
 class TestAdminPermissions:
     def test_admin_can_access_admin_panel(self, client: TestClient, create_user):
-        admin = create_user("admin", is_admin=True)
+        create_user("admin", is_admin=True)
         client.post("/login", data={"username": "admin", "password": "testpass123"})
 
         response = client.get("/admin/users")
         assert response.status_code == 200
 
     def test_regular_user_cannot_access_admin_panel(self, client: TestClient, create_user):
-        user = create_user("regular_user")
+        create_user("regular_user")
         client.post("/login", data={"username": "regular_user", "password": "testpass123"})
 
         response = client.get("/admin/users")
