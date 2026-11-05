@@ -3,6 +3,8 @@ from starlette.testclient import TestClient
 
 from app.models import Project
 
+from tests.conftest import db_session
+
 
 class TestGuestAccess:
     def test_guest_cannot_access_projects(self, client: TestClient):
@@ -17,17 +19,17 @@ class TestGuestAccess:
 
 class TestProjectPermissions:
     def test_member_can_view_project(
-        self, client: TestClient, create_user, create_project, db_session
+        self, client: TestClient, create_user, db_session
     ):
         create_user("member")
 
         client.post("/login", data={"username": "member", "password": "testpass123"})
 
         client.post(
-            "/projects/create", data={"name": "Test Project", "description": "Test Description"}
+            "/projects/create", data={"name": "test project", "description": "Test Description"}
         )
 
-        project = db_session.scalar(select(Project).where(Project.name == "Test Project"))
+        project = db_session.scalar(select(Project).where(Project.name == "test project"))
 
         response = client.get(f"/projects/{project.id}", follow_redirects=False)
         assert response.status_code == 200
@@ -51,7 +53,7 @@ class TestProjectPermissions:
     def test_only_owner_can_delete_project(self, client: TestClient, create_user, create_project):
         owner = create_user("owner")
         create_user("member")
-        project = create_project("Test Project", owner.id)
+        project = create_project("test project", owner.id)
 
         client.post("/login", data={"username": "member", "password": "testpass123"})
 

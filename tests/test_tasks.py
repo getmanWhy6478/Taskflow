@@ -3,17 +3,19 @@ from starlette.testclient import TestClient
 
 from app.models import Priority, Project, Status, Task
 
+from tests.conftest import db_session
+
 
 class TestTaskCreation:
-    def test_create_task_success(self, client: TestClient, create_user, create_project, db_session):
+    def test_create_task_success(self, client: TestClient, create_user, db_session):
         user = create_user("creator")
         client.post("/login", data={"username": "creator", "password": "testpass123"})
 
         client.post(
-            "/projects/create", data={"name": "Test Project", "description": "Test Description"}
+            "/projects/create", data={"name": "test project", "description": "Test Description"}
         )
 
-        project = db_session.scalar(select(Project).where(Project.name == "Test Project"))
+        project = db_session.scalar(select(Project).where(Project.name == "test project"))
         response = client.post(
             f"/projects/{project.id}/tasks/create",
             data={
@@ -30,7 +32,7 @@ class TestTaskCreation:
 
 
 class TestTaskRead:
-    def test_view_task(self, client: TestClient, create_user, create_project, db_session):
+    def test_view_task(self, client: TestClient, create_user, db_session):
         from app.models import Priority, Project, Status, Task
 
         user = create_user("viewer")
@@ -38,15 +40,15 @@ class TestTaskRead:
         client.post("/login", data={"username": "viewer", "password": "testpass123"})
 
         client.post(
-            "/projects/create", data={"name": "Test Project", "description": "Test Description"}
+            "/projects/create", data={"name": "test project", "description": "Test Description"}
         )
 
-        project = db_session.scalar(select(Project).where(Project.name == "Test Project"))
+        project = db_session.scalar(select(Project).where(Project.name == "test project"))
 
         client.post(
             f"/projects/{project.id}/tasks/create",
             data={
-                "title": "Test Task",
+                "title": "test task",
                 "description": "Test Description",
                 "priority": Priority.MEDIUM.value,
                 "status": Status.IN_WORK.value,
@@ -64,7 +66,7 @@ class TestTaskRead:
 
 
 class TestTaskUpdate:
-    def test_update_task_status(self, client: TestClient, create_user, create_project, db_session):
+    def test_update_task_status(self, client: TestClient, create_user, db_session):
         from app.models import Task
 
         user = create_user("viewer")
@@ -72,15 +74,15 @@ class TestTaskUpdate:
         client.post("/login", data={"username": "viewer", "password": "testpass123"})
 
         client.post(
-            "/projects/create", data={"name": "Test Project", "description": "Test Description"}
+            "/projects/create", data={"name": "test project", "description": "Test Description"}
         )
 
-        project = db_session.scalar(select(Project).where(Project.name == "Test Project"))
+        project = db_session.scalar(select(Project).where(Project.name == "test project"))
 
         client.post(
             f"/projects/{project.id}/tasks/create",
             data={
-                "title": "Test Task",
+                "title": "test task",
                 "description": "Test Description",
                 "priority": Priority.MEDIUM.value,
                 "status": Status.IN_WORK.value,
@@ -97,7 +99,7 @@ class TestTaskUpdate:
         assert task.status.value == Status.DONE.value
 
     def test_invalid_status_transition(
-        self, client: TestClient, create_user, create_project, db_session
+        self, client: TestClient, create_user, db_session
     ):
         from app.models import Task
 
@@ -106,15 +108,15 @@ class TestTaskUpdate:
         client.post("/login", data={"username": "updater", "password": "testpass123"})
 
         client.post(
-            "/projects/create", data={"name": "Test Project", "description": "Test Description"}
+            "/projects/create", data={"name": "test project", "description": "Test Description"}
         )
 
-        project = db_session.scalar(select(Project).where(Project.name == "Test Project"))
+        project = db_session.scalar(select(Project).where(Project.name == "test project"))
 
         client.post(
             f"/projects/{project.id}/tasks/create",
             data={
-                "title": "Test Task",
+                "title": "test task",
                 "description": "Test Description",
                 "priority": Priority.MEDIUM.value,
                 "status": Status.NEW.value,
@@ -129,22 +131,22 @@ class TestTaskUpdate:
 
 
 class TestTaskDelete:
-    def test_delete_task(self, client: TestClient, create_user, create_project, db_session):
+    def test_delete_task(self, client: TestClient, create_user, db_session):
         from app.models import Task
 
         user = create_user("deleter")
 
         client.post("/login", data={"username": "deleter", "password": "testpass123"})
         client.post(
-            "/projects/create", data={"name": "Test Project", "description": "Test Description"}
+            "/projects/create", data={"name": "test project", "description": "Test Description"}
         )
 
-        project = db_session.scalar(select(Project).where(Project.name == "Test Project"))
+        project = db_session.scalar(select(Project).where(Project.name == "test project"))
 
         client.post(
             f"/projects/{project.id}/tasks/create",
             data={
-                "title": "Test Task",
+                "title": "test task",
                 "description": "Test Description",
                 "priority": Priority.MEDIUM.value,
                 "status": Status.NEW.value,

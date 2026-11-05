@@ -1,28 +1,46 @@
+from http.client import responses
+
 from sqlalchemy import select
 from starlette.testclient import TestClient
 
-from app.models import Priority, Project, Status, Task
+from app.models import Priority, Project, Status, Task, User
+
+from tests.conftest import db_session
+
 
 
 class TestCommentCreation:
     def test_create_comment_success(
-        self, client: TestClient, create_user, create_project, db_session
+        self, client: TestClient, create_user, db_session
     ):
 
         user = create_user("commenter")
 
+        client.post("/register", data={"username": "qwertyuiop[]", "password": "qwertyuiop[]", "display_name": "qwertyuiop[]", "email": "qwertahdhdak@"})
+
         client.post("/login", data={"username": "commenter", "password": "testpass123"})
 
-        client.post(
-            "/projects/create", data={"name": "Test Project", "description": "Test Description"}
+        response = client.post(
+            "/projects/create", data={"name": "test project", "description": "Test Description"}, follow_redirects=True
         )
+        print("=" * 50)
+        print("STATUS:", response.status_code)
+        print("HEADERS:", dict(response.headers))
+        print("BODY:", response.text)
+        print("=" * 50)
 
-        project = db_session.scalar(select(Project).where(Project.name == "Test Project"))
+        assert response.status_code in (200, 303), f"Проект не создался: {response.text}"
+
+        project = db_session.scalar(select(Project).where(Project.name == "test project"))
+        user = db_session.scalar(select(User).where(User.username == "qwertyuiop[]"))
+
+        print("User: ", user.username)
+        print("Project: ", project.id)
 
         client.post(
             f"/projects/{project.id}/tasks/create",
             data={
-                "title": "Test Task",
+                "title": "test task",
                 "description": "Test Description",
                 "priority": Priority.MEDIUM.value,
                 "status": Status.NEW.value,
@@ -39,22 +57,22 @@ class TestCommentCreation:
 
 
 class TestCommentRead:
-    def test_view_comments(self, client: TestClient, create_user, create_project, db_session):
+    def test_view_comments(self, client: TestClient, create_user, db_session):
 
         user = create_user("commenter")
 
         client.post("/login", data={"username": "commenter", "password": "testpass123"})
 
         client.post(
-            "/projects/create", data={"name": "Test Project", "description": "Test Description"}
+            "/projects/create", data={"name": "test project", "description": "Test Description"}
         )
 
-        project = db_session.scalar(select(Project).where(Project.name == "Test Project"))
+        project = db_session.scalar(select(Project).where(Project.name == "test project"))
 
         client.post(
             f"/projects/{project.id}/tasks/create",
             data={
-                "title": "Test Task",
+                "title": "test task",
                 "description": "Test Description",
                 "priority": Priority.MEDIUM.value,
                 "status": Status.NEW.value,
@@ -71,7 +89,7 @@ class TestCommentRead:
 
 
 class TestCommentDelete:
-    def test_delete_comment(self, client: TestClient, create_user, create_project, db_session):
+    def test_delete_comment(self, client: TestClient, create_user, db_session):
         from app.models import Comment
 
         user = create_user("commenter")
@@ -79,15 +97,15 @@ class TestCommentDelete:
         client.post("/login", data={"username": "commenter", "password": "testpass123"})
 
         client.post(
-            "/projects/create", data={"name": "Test Project", "description": "Test Description"}
+            "/projects/create", data={"name": "test project", "description": "Test Description"}
         )
 
-        project = db_session.scalar(select(Project).where(Project.name == "Test Project"))
+        project = db_session.scalar(select(Project).where(Project.name == "test project"))
 
         client.post(
             f"/projects/{project.id}/tasks/create",
             data={
-                "title": "Test Task",
+                "title": "test task",
                 "description": "Test Description",
                 "priority": Priority.MEDIUM.value,
                 "status": Status.NEW.value,
@@ -108,7 +126,7 @@ class TestCommentDelete:
         assert deleted is None
 
     def test_cannot_delete_others_comment(
-        self, client: TestClient, create_user, create_project, db_session
+        self, client: TestClient, create_user, db_session
     ):
         from app.models import Comment
 
@@ -116,15 +134,15 @@ class TestCommentDelete:
         client.post("/login", data={"username": "owner", "password": "testpass123"})
         create_user("outsider")
         client.post(
-            "/projects/create", data={"name": "Test Project", "description": "Test Description"}
+            "/projects/create", data={"name": "test project", "description": "Test Description"}
         )
 
-        project = db_session.scalar(select(Project).where(Project.name == "Test Project"))
+        project = db_session.scalar(select(Project).where(Project.name == "test project"))
 
         client.post(
             f"/projects/{project.id}/tasks/create",
             data={
-                "title": "Test Task",
+                "title": "test task",
                 "description": "Test Description",
                 "priority": Priority.MEDIUM.value,
                 "status": Status.NEW.value,

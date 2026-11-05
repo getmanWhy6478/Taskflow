@@ -3,10 +3,12 @@ from starlette.testclient import TestClient
 
 from app.models import Priority, Project, Status, Task
 
+from tests.conftest import db_session
+
 
 class TestTaskFiltering:
     def test_filter_by_status(
-        self, client: TestClient, create_user, create_project, db_session, template_context
+        self, client: TestClient, create_user, db_session, template_context
     ):
 
         user = create_user("member")
@@ -14,10 +16,10 @@ class TestTaskFiltering:
         client.post("/login", data={"username": "member", "password": "testpass123"})
 
         client.post(
-            "/projects/create", data={"name": "Test Project", "description": "Test Description"}
+            "/projects/create", data={"name": "test project", "description": "Test Description"}
         )
 
-        project = db_session.scalar(select(Project).where(Project.name == "Test Project"))
+        project = db_session.scalar(select(Project).where(Project.name == "test project"))
 
         for status in ["Новая", "В работе", "Выполнена"]:
             task = Task(
@@ -40,7 +42,7 @@ class TestTaskFiltering:
         assert template_context["total_pages"] == 1
 
     def test_filter_by_priority(
-        self, client: TestClient, create_user, create_project, db_session, template_context
+        self, client: TestClient, create_user, db_session, template_context
     ):
 
         user = create_user("member")
@@ -48,10 +50,10 @@ class TestTaskFiltering:
         client.post("/login", data={"username": "member", "password": "testpass123"})
 
         client.post(
-            "/projects/create", data={"name": "Test Project", "description": "Test Description"}
+            "/projects/create", data={"name": "test project", "description": "Test Description"}
         )
 
-        project = db_session.scalar(select(Project).where(Project.name == "Test Project"))
+        project = db_session.scalar(select(Project).where(Project.name == "test project"))
 
         for priority in ["Низкий", "Средний", "Высокий"]:
             task = Task(
@@ -76,7 +78,7 @@ class TestTaskFiltering:
 
 class TestTaskSearch:
     def test_search_by_title(
-        self, client: TestClient, create_user, create_project, db_session, template_context
+        self, client: TestClient, create_user, db_session, template_context
     ):
 
         user = create_user("member")
@@ -84,10 +86,10 @@ class TestTaskSearch:
         client.post("/login", data={"username": "member", "password": "testpass123"})
 
         client.post(
-            "/projects/create", data={"name": "Test Project", "description": "Test Description"}
+            "/projects/create", data={"name": "test project", "description": "Test Description"}
         )
 
-        project = db_session.scalar(select(Project).where(Project.name == "Test Project"))
+        project = db_session.scalar(select(Project).where(Project.name == "test project"))
 
         task1 = Task(title="Find mom for George", project_id=project.id, author_id=user.id)
         task2 = Task(title="Buy groceries", project_id=project.id, author_id=user.id)
@@ -106,7 +108,7 @@ class TestTaskSearch:
 
 class TestPagination:
     def test_pagination_default_page(
-        self, client: TestClient, create_user, create_project, db_session, template_context
+        self, client: TestClient, create_user, db_session, template_context
     ):
 
         user = create_user("member")
@@ -114,10 +116,10 @@ class TestPagination:
         client.post("/login", data={"username": "member", "password": "testpass123"})
 
         client.post(
-            "/projects/create", data={"name": "Test Project", "description": "Test Description"}
+            "/projects/create", data={"name": "test project", "description": "Test Description"}
         )
 
-        project = db_session.scalar(select(Project).where(Project.name == "Test Project"))
+        project = db_session.scalar(select(Project).where(Project.name == "test project"))
 
         for i in range(15):
             task = Task(title=f"Task {i}", project_id=project.id, author_id=user.id)
@@ -131,7 +133,7 @@ class TestPagination:
         assert len(tasks) == 10
 
     def test_pagination_second_page(
-        self, client: TestClient, create_user, create_project, db_session, template_context
+        self, client: TestClient, create_user, db_session, template_context
     ):
 
         user = create_user("member")
@@ -139,10 +141,10 @@ class TestPagination:
         client.post("/login", data={"username": "member", "password": "testpass123"})
 
         client.post(
-            "/projects/create", data={"name": "Test Project", "description": "Test Description"}
+            "/projects/create", data={"name": "test project", "description": "Test Description"}
         )
 
-        project = db_session.scalar(select(Project).where(Project.name == "Test Project"))
+        project = db_session.scalar(select(Project).where(Project.name == "test project"))
 
         for i in range(15):
             task = Task(title=f"Task {i:02d}", project_id=project.id, author_id=user.id)
@@ -158,7 +160,7 @@ class TestPagination:
         assert template_context["total_pages"] == 2
 
     def test_pagination_preserves_filters(
-        self, client: TestClient, create_user, create_project, db_session, template_context
+        self, client: TestClient, create_user, db_session, template_context
     ):
 
         user = create_user("member")
@@ -166,10 +168,10 @@ class TestPagination:
         client.post("/login", data={"username": "member", "password": "testpass123"})
 
         client.post(
-            "/projects/create", data={"name": "Test Project", "description": "Test Description"}
+            "/projects/create", data={"name": "test project", "description": "Test Description"}
         )
 
-        project = db_session.scalar(select(Project).where(Project.name == "Test Project"))
+        project = db_session.scalar(select(Project).where(Project.name == "test project"))
 
         for i in range(15):
             task = Task(title=f"Task {i}", project_id=project.id, status="Новая", author_id=user.id)

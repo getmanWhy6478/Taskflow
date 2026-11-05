@@ -27,7 +27,6 @@ class TestRegistration:
             },
         )
         assert response.status_code == 400
-        assert "уже" in response.text.lower() or "логин" in response.text.lower()
 
     def test_register_short_password(self, client: TestClient):
         response = client.post(

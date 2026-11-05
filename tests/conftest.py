@@ -6,8 +6,8 @@ from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
 from app.main import app
-from app.models.projects import Project
 from app.models.users import User
+from app.models import Priority, Project, Status, Task, Comment
 from app.services.auth_services import hash_password
 from app.templates.templates import templates
 
@@ -17,7 +17,7 @@ engine = create_engine(
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+TestingSessionLocal = sessionmaker(bind=engine)
 
 Base.engine = engine
 Base.SessionLocal = TestingSessionLocal
@@ -48,7 +48,7 @@ def client(db_session):
             pass
 
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
+    with TestClient(app, base_url="https://testserver") as test_client:
         yield test_client
     app.dependency_overrides.clear()
 
@@ -81,6 +81,33 @@ def create_project(db_session: Session):
         return project
 
     return _create_project
+
+@pytest.fixture
+def create_task(db_session: Session):
+    def _create_task(
+        title: str,
+        project_id: int,
+        author_id: int,
+        description: str = "Test task",
+        priority: str = Priority.MEDIUM.value,
+        status: str = Status.NEW.value
+    ):
+        task = Task(
+            title=title,
+            description=description,
+            project_id=project_id,
+            author_id=author_id,
+            priority=priority,
+            status=status
+        )
+        db_session.add(task)
+        db_session.commit()
+        db_session.refresh(task)
+        return task
+
+    return _create_task
+
+
 
 
 @pytest.fixture
