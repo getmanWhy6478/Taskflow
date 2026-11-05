@@ -30,8 +30,28 @@
 ### Требования
 - Установленный [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
-### Быстрый старт
 
-1. Создайте файл `.env` (скопируйте из `.env.example`)
-2. В bash напишите "docker-compose up --build"
-3. Откройте http://127.0.0.1:8000
+### 🚀 Пошаговая установка
+
+Убедитесь, что у вас установлен [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+
+#### Шаг 1. Клонирование репозитория
+
+git clone https://github.com/GetmanWhy6478/Taskflow.git
+
+#### Шаг 2. Переименуйте .env.example в .env
+
+#### Шаг 3. Запустите команду:
+
+docker-compose up --build
+
+Эта команда:
+- Скачает базовые образы Python 3.12 и PostgreSQL 15
+- Установит все зависимости из pyproject.toml
+- Создаст и настроит базу данных PostgreSQL
+- Запустит приложение на порту 8000
+
+#### Шаг 4. Откройте в браузере: http://127.0.0.1:8000
+
+Готово!
+

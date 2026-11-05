@@ -46,8 +46,6 @@ app.include_router(comment_router)
 app.include_router(dashboard_router)
 app.include_router(profile_router)
 
-Base.metadata.create_all(bind=engine)
-
 
 @app.get("/")
 def index():

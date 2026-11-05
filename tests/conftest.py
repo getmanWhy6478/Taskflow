@@ -23,6 +23,9 @@ engine = create_engine(
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+Base.engine = engine
+Base.SessionLocal = TestingSessionLocal
+
 
 @pytest.fixture(autouse=True)
 def setup_database():
