@@ -120,9 +120,12 @@ def get_available_users(db: Session, p_id: int, users: list[User]) -> list[User]
     return users_not_in_project
 
 
-def delete_member(db: Session, project: Project, form: DeleteForm) -> None:
-    project_member = ProjectsMember(user_id=form.member_id, project_id=project.id, role=form.role)
-    db.add(project_member)
+def delete_member(db: Session, form: DeleteForm) -> None:
+    project_member = db.scalar(
+        select(ProjectsMember).where(
+            ProjectsMember.user_id == form.member_id, ProjectsMember.project_id == form.project_id
+        )
+    )
+    db.delete(project_member)
     db.commit()
-    db.refresh(project_member)
     return

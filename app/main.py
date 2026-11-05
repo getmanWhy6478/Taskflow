@@ -26,6 +26,7 @@ app.add_middleware(
     secret_key=settings.secret_key,
     max_age=14 * 24 * 60 * 60,
     same_site="lax",
+    https_only=True,
 )
 
 app.mount(
@@ -48,7 +49,7 @@ def index():
 
 
 @app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
+def http_exception_handler(request: Request, exc: HTTPException):
 
     if exc.status_code == 404:
         return templates.TemplateResponse(
@@ -83,7 +84,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 
 @app.exception_handler(AuthRequiredException)
-async def auth_required_handler(request: Request, exc: AuthRequiredException):
+def auth_required_handler(request: Request, exc: AuthRequiredException):
     encoded_next = quote(exc.next_page, safe="")
     return RedirectResponse(
         f"/login?next_page={encoded_next}",

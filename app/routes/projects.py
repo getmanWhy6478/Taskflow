@@ -189,10 +189,10 @@ def delete_project(
 def manage_member(
     p_id: int,
     member_id: int = Form(...),
-    role: str = Form(...),
+    role: str = Form(""),
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
-    action: str = Query(""),
+    action: str = Form(""),
     project: Project = Depends(get_project_with_access),
 ):
     if not permission_service.can_edit_project(user, project):
@@ -202,7 +202,7 @@ def manage_member(
         project_service.add_member(db, project, form)
     elif action == "remove":
         form = DeleteForm(member_id=member_id, project_id=project.id)
-        project_service.delete_member(db, project, form)
+        project_service.delete_member(db, form)
     response = RedirectResponse(f"/projects/{p_id}", status_code=303)
     return response
 

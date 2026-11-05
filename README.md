@@ -13,6 +13,8 @@
 
 ![Интерфейс TaskFlow](dashboard.png)
 
+![Проекты в TaskFlow](projects.png)
+
 ## Стек технологий
 
 - **Backend:** Python 3.10+, FastAPI, SQLAlchemy 2.0
