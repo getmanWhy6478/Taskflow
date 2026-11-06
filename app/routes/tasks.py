@@ -67,7 +67,7 @@ def edit_task(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
     title: str = Form(...),
-    description: str = Form(...),
+    description: str = Form(""),
     status: Status = Form(...),
     priority: Priority = Form(...),
     task=Depends(get_task_with_access),

@@ -145,7 +145,7 @@ def edit_project(
     p_id: int,
     user: User = Depends(require_user),
     name: str = Form(...),
-    description: str = Form(...),
+    description: str = Form(""),
     db: Session = Depends(get_db),
     project: Project = Depends(get_project_with_access),
 ):

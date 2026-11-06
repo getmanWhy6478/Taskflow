@@ -3,8 +3,6 @@ from starlette.testclient import TestClient
 
 from app.models import Project
 
-from tests.conftest import db_session
-
 
 class TestGuestAccess:
     def test_guest_cannot_access_projects(self, client: TestClient):
@@ -18,9 +16,7 @@ class TestGuestAccess:
 
 
 class TestProjectPermissions:
-    def test_member_can_view_project(
-        self, client: TestClient, create_user, db_session
-    ):
+    def test_member_can_view_project(self, client: TestClient, create_user, db_session):
         create_user("member")
 
         client.post("/login", data={"username": "member", "password": "testpass123"})

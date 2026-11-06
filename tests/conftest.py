@@ -6,8 +6,8 @@ from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
 from app.main import app
+from app.models import Priority, Project, Status, Task
 from app.models.users import User
-from app.models import Priority, Project, Status, Task, Comment
 from app.services.auth_services import hash_password
 from app.templates.templates import templates
 
@@ -82,6 +82,7 @@ def create_project(db_session: Session):
 
     return _create_project
 
+
 @pytest.fixture
 def create_task(db_session: Session):
     def _create_task(
@@ -90,7 +91,7 @@ def create_task(db_session: Session):
         author_id: int,
         description: str = "Test task",
         priority: str = Priority.MEDIUM.value,
-        status: str = Status.NEW.value
+        status: str = Status.NEW.value,
     ):
         task = Task(
             title=title,
@@ -98,7 +99,7 @@ def create_task(db_session: Session):
             project_id=project_id,
             author_id=author_id,
             priority=priority,
-            status=status
+            status=status,
         )
         db_session.add(task)
         db_session.commit()
@@ -106,8 +107,6 @@ def create_task(db_session: Session):
         return task
 
     return _create_task
-
-
 
 
 @pytest.fixture

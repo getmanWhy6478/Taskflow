@@ -3,8 +3,6 @@ from starlette.testclient import TestClient
 
 from app.models import Priority, Project, Status, Task
 
-from tests.conftest import db_session
-
 
 class TestTaskCreation:
     def test_create_task_success(self, client: TestClient, create_user, db_session):
@@ -98,9 +96,7 @@ class TestTaskUpdate:
 
         assert task.status.value == Status.DONE.value
 
-    def test_invalid_status_transition(
-        self, client: TestClient, create_user, db_session
-    ):
+    def test_invalid_status_transition(self, client: TestClient, create_user, db_session):
         from app.models import Task
 
         user = create_user("updater")

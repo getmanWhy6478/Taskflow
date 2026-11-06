@@ -1,27 +1,30 @@
-from http.client import responses
-
 from sqlalchemy import select
 from starlette.testclient import TestClient
 
 from app.models import Priority, Project, Status, Task, User
 
-from tests.conftest import db_session
-
-
 
 class TestCommentCreation:
-    def test_create_comment_success(
-        self, client: TestClient, create_user, db_session
-    ):
+    def test_create_comment_success(self, client: TestClient, create_user, db_session):
 
         user = create_user("commenter")
 
-        client.post("/register", data={"username": "qwertyuiop[]", "password": "qwertyuiop[]", "display_name": "qwertyuiop[]", "email": "qwertahdhdak@"})
+        client.post(
+            "/register",
+            data={
+                "username": "qwertyuiop[]",
+                "password": "qwertyuiop[]",
+                "display_name": "qwertyuiop[]",
+                "email": "qwertahdhdak@",
+            },
+        )
 
         client.post("/login", data={"username": "commenter", "password": "testpass123"})
 
         response = client.post(
-            "/projects/create", data={"name": "test project", "description": "Test Description"}, follow_redirects=True
+            "/projects/create",
+            data={"name": "test project", "description": "Test Description"},
+            follow_redirects=True,
         )
         print("=" * 50)
         print("STATUS:", response.status_code)
@@ -125,9 +128,7 @@ class TestCommentDelete:
         deleted = db_session.scalar(select(Comment).where(Comment.body == "Great task!"))
         assert deleted is None
 
-    def test_cannot_delete_others_comment(
-        self, client: TestClient, create_user, db_session
-    ):
+    def test_cannot_delete_others_comment(self, client: TestClient, create_user, db_session):
         from app.models import Comment
 
         owner = create_user("owner")

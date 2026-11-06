@@ -3,13 +3,9 @@ from starlette.testclient import TestClient
 
 from app.models import Priority, Project, Status, Task
 
-from tests.conftest import db_session
-
 
 class TestTaskFiltering:
-    def test_filter_by_status(
-        self, client: TestClient, create_user, db_session, template_context
-    ):
+    def test_filter_by_status(self, client: TestClient, create_user, db_session, template_context):
 
         user = create_user("member")
 
@@ -77,9 +73,7 @@ class TestTaskFiltering:
 
 
 class TestTaskSearch:
-    def test_search_by_title(
-        self, client: TestClient, create_user, db_session, template_context
-    ):
+    def test_search_by_title(self, client: TestClient, create_user, db_session, template_context):
 
         user = create_user("member")
 
