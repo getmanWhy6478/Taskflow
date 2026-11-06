@@ -61,7 +61,7 @@ def get_project_with_access(
     if project is None:
         raise HTTPException(404, "Проект не найден")
 
-    if user not in project.members and not user.is_admin:
+    if user not in project.members:
         raise HTTPException(403, "Проект не найден или у вас нет доступа")
 
     return project
@@ -77,7 +77,7 @@ def get_task_with_access(
     if task is None:
         raise HTTPException(404, "Проект не найден")
 
-    if user not in task.project.members and not user.is_admin:
+    if user not in task.project.members:
         raise HTTPException(403, "Задача не найдена или у вас нет доступа")
 
     return task
