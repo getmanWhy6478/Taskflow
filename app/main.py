@@ -26,7 +26,6 @@ app.add_middleware(
     secret_key=settings.secret_key,
     max_age=14 * 24 * 60 * 60,
     same_site="lax",
-    https_only=True,
 )
 
 app.mount(
