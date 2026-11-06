@@ -66,6 +66,21 @@ def get_project_with_access(
 
     return project
 
+def get_task_with_access_only_view(
+    t_id: int,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+) -> Task:
+    task = db.get(Task, t_id)
+
+    if task is None:
+        raise HTTPException(404, "Проект не найден")
+
+    if user not in task.project.members and not user.is_admin:
+        raise HTTPException(403, "Задача не найдена или у вас нет доступа")
+
+    return task
+
 
 def get_task_with_access(
     t_id: int,

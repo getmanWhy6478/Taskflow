@@ -7,7 +7,7 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from app.database import get_db
-from app.dependencies import get_task_with_access, require_user
+from app.dependencies import get_task_with_access, require_user, get_task_with_access_only_view
 from app.forms.comment import CommentForm
 from app.forms.tasks import TaskForm
 from app.models import Priority, Status, User
@@ -26,7 +26,7 @@ def get_task(
     t_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
-    task=Depends(get_task_with_access),
+    task=Depends(get_task_with_access_only_view),
 ):
     comments = task_service.get_tasks_comments(db, task)
     return templates.TemplateResponse(
