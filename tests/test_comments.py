@@ -7,7 +7,7 @@ from app.models import Priority, Project, Status, Task, User
 class TestCommentCreation:
     def test_create_comment_success(self, client: TestClient, create_user, db_session):
 
-        user = create_user("commenter")
+        create_user("commenter")
 
         client.post(
             "/register",
@@ -26,19 +26,11 @@ class TestCommentCreation:
             data={"name": "test project", "description": "Test Description"},
             follow_redirects=True,
         )
-        print("=" * 50)
-        print("STATUS:", response.status_code)
-        print("HEADERS:", dict(response.headers))
-        print("BODY:", response.text)
-        print("=" * 50)
 
         assert response.status_code in (200, 303), f"Проект не создался: {response.text}"
 
         project = db_session.scalar(select(Project).where(Project.name == "test project"))
         user = db_session.scalar(select(User).where(User.username == "qwertyuiop[]"))
-
-        print("User: ", user.username)
-        print("Project: ", project.id)
 
         client.post(
             f"/projects/{project.id}/tasks/create",

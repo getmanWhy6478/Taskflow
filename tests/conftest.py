@@ -55,13 +55,14 @@ def client(db_session):
 
 @pytest.fixture
 def create_user(db_session: Session):
-    def _create_user(username: str, password: str = "testpass123", is_admin: bool = False):
+    def _create_user(username: str, password: str = "testpass123", is_admin: bool = False, is_banned: bool = False):
         user = User(
             username=username,
             email=f"{username}@test.com",
             display_name=username,
             password_hash=hash_password(password),
             is_admin=is_admin,
+            is_banned=is_banned
         )
         db_session.add(user)
         db_session.commit()
