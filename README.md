@@ -41,7 +41,7 @@
 
 git clone https://github.com/GetmanWhy6478/Taskflow.git
 
-#### Шаг 2. Переименуйте .env.example в .env
+#### Шаг 2. Переименуйте .env.example в .env и заполните своими данными
 
 #### Шаг 3. Запустите команду:
 
