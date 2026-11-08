@@ -7,6 +7,9 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///./taskmanager.db"
     secret_key: str = Field(default="bla-bla-bla-bla-goofy-key", min_length=10)
+    postgres_user: str = "postgres"
+    postgres_password: str = "PASSWORD"
+    postgres_db: str =  "taskflow"
     debug: bool = False
 
 
