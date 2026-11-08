@@ -7,14 +7,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  document.querySelectorAll(".alert[data-autohide]").forEach((alert) => {
+document.querySelectorAll(".alert[data-autohide]").forEach((alert) => {
     setTimeout(() => {
       const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
       bsAlert.close();
     }, 5000);
   });
 
-  document.querySelectorAll("form[novalidate]").forEach((form) => {
+document.querySelectorAll("form[novalidate]").forEach((form) => {
     form.addEventListener("submit", (event) => {
       if (!form.checkValidity()) {
         event.preventDefault();
@@ -24,3 +24,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toastEl = document.getElementById('flashToast');
+    if (toastEl) {
+      const toast = new bootstrap.Toast(toastEl, {
+        delay: 3000,
+        autohide: true
+      });
+      toast.show();
+    }
+  });

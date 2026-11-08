@@ -7,10 +7,10 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from app.database import get_db
-from app.dependencies import get_task_with_access, require_user, get_task_with_access_only_view
+from app.dependencies import get_task_with_access, get_task_with_access_only_view, require_user
 from app.forms.comment import CommentForm
 from app.forms.tasks import TaskForm
-from app.models import Priority, Status, User
+from app.models import Priority, Status, Task, User
 from app.services import comment_services as comment_service
 from app.services import permission_services as permission_service
 from app.services import project_services as project_services
@@ -26,11 +26,21 @@ def get_task(
     t_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
-    task=Depends(get_task_with_access_only_view),
+    task: Task = Depends(get_task_with_access_only_view),
 ):
     comments = task_service.get_tasks_comments(db, task)
+    flash_message = request.session.pop("flash_message", None)
+    flash_type = request.session.pop("flash_type", "success")
     return templates.TemplateResponse(
-        request, "tasks/detail.html", {"user": user, "task": task, "comments": comments}
+        request,
+        "tasks/detail.html",
+        {
+            "user": user,
+            "task": task,
+            "comments": comments,
+            "flash_message": flash_message,
+            "flash_type": flash_type,
+        },
     )
 
 
@@ -40,7 +50,7 @@ def edit_task_page(
     request: Request,
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
-    task=Depends(get_task_with_access),
+    task: Task = Depends(get_task_with_access),
 ):
     project = project_services.get_project_by_id(db, task.project_id)
     available_members = project_services.get_project_members(db, project)
@@ -70,7 +80,7 @@ def edit_task(
     description: str = Form(""),
     status: Status = Form(...),
     priority: Priority = Form(...),
-    task=Depends(get_task_with_access),
+    task: Task = Depends(get_task_with_access),
 ):
     title = title.lower()
     description = description.lower()
@@ -108,17 +118,20 @@ def edit_task(
             },
         )
     task_service.update_task(db, task, form)
+    request.session["flash_message"] = "Задача изменена!"
+    request.session["flash_type"] = "success"
     response = RedirectResponse(f"/tasks/{t_id}", status_code=303)
     return response
 
 
 @router.post("/{t_id}/status")
 def edit_status(
+    request: Request,
     t_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
     status: str = Form(...),
-    task=Depends(get_task_with_access),
+    task: Task = Depends(get_task_with_access),
 ):
     if not permission_service.can_edit_task_status(user, task):
         raise HTTPException(status_code=403, detail="Нет прав")
@@ -135,6 +148,8 @@ def edit_status(
     if next_status not in allowed_transitions[current_status]:
         raise HTTPException(400, f"Переход из '{current_status}' в '{next_status}' не разрешён")
     task_service.update_task_status(db, task, next_status)
+    request.session["flash_message"] = "Статус изменён!"
+    request.session["flash_type"] = "success"
     return RedirectResponse(
         f"/tasks/{t_id}",
         status_code=303,
@@ -143,27 +158,33 @@ def edit_status(
 
 @router.post("/{t_id}/delete")
 def delete_task(
+    request: Request,
     t_id: int,
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
-    task=Depends(get_task_with_access),
+    task: Task = Depends(get_task_with_access),
 ):
     if not permission_service.can_delete_task(user, task):
         raise HTTPException(status_code=403, detail="Нет прав")
     task_service.delete_task(db, task)
+    request.session["flash_message"] = "Задачи больше нет!"
+    request.session["flash_type"] = "success"
     response = RedirectResponse("/projects", status_code=303)
     return response
 
 
 @router.post("/{t_id}/comments")
 def add_comment(
+    request: Request,
     t_id: int,
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
     text: str = Form(...),
-    task=Depends(get_task_with_access),
+    task: Task = Depends(get_task_with_access),
 ):
     form = CommentForm(text=text)
     comment_service.create_comment(db, form, task, user)
+    request.session["flash_message"] = "Вы оставили комментарий!"
+    request.session["flash_type"] = "success"
     response = RedirectResponse(f"/tasks/{t_id}", status_code=303)
     return response

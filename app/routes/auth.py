@@ -66,6 +66,8 @@ def register_user(
         )
     hashed_password = hash_password(form.password)
     auth_services.add_user(form, db, hashed_password)
+    request.session["flash_message"] = "Пользователь зарегестрирован"
+    request.session["flash_type"] = "success"
     return RedirectResponse("/login", status_code=303)
 
 
@@ -76,8 +78,17 @@ def login_page(request: Request, next_page: str = Query(""), db: Session = Depen
         user = db.get(User, user_id)
         if user and not user.is_banned and next_page and next_page.startswith("/"):
             return RedirectResponse(unquote(next_page), status_code=303)
+    flash_message = request.session.get("flash_message")
+    flash_type = request.session.get("flash_type")
     return templates.TemplateResponse(
-        request, "auth/login.html", {"user": None, "next_page": next_page}
+        request,
+        "auth/login.html",
+        {
+            "user": None,
+            "next_page": next_page,
+            "flash_message": flash_message,
+            "flash_type": flash_type,
+        },
     )
 
 
@@ -117,6 +128,8 @@ def login_user(
         decoded_next = unquote(next_page)
         if decoded_next.startswith("/") and not decoded_next.startswith("//"):
             return RedirectResponse(decoded_next, status_code=303)
+    request.session["flash_message"] = "Поздравляем с входом!"
+    request.session["flash_type"] = "success"
     response = RedirectResponse(next_page or "/dashboard", status_code=303)
     return response
 

@@ -29,10 +29,17 @@ def get_projects(
     request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)
 ):
     projects = project_service.get_all_projects(db, user)
+    flash_message = request.session.pop("flash_message", None)
+    flash_type = request.session.pop("flash_type", "success")
     return templates.TemplateResponse(
         request,
         "projects/list.html",
-        {"user": user, "projects": projects},
+        {
+            "user": user,
+            "projects": projects,
+            "flash_message": flash_message,
+            "flash_type": flash_type,
+        },
     )
 
 
@@ -48,7 +55,7 @@ def create_project(
     request: Request,
     user: User = Depends(require_user),
     name: str = Form(...),
-    description: str = Form(...),
+    description: str = Form(""),
     db: Session = Depends(get_db),
 ):
     try:
@@ -68,6 +75,8 @@ def create_project(
     response = RedirectResponse("/projects", status_code=303)
     p_m = MemberForm(member_id=user.id, role="Владелец")
     project_service.add_member(db, project, p_m)
+    request.session["flash_message"] = "Проект реально создан!"
+    request.session["flash_type"] = "success"
     return response
 
 
@@ -101,7 +110,8 @@ def get_project_by_id(
             f"projects/{p_id}",
             status_code=303,
         )
-
+    flash_message = request.session.pop("flash_message", None)
+    flash_type = request.session.pop("flash_type", "success")
     return templates.TemplateResponse(
         request,
         "projects/detail.html",
@@ -122,6 +132,8 @@ def get_project_by_id(
             "total_pages": total_pages,
             "total_count": total_count,
             "tasks_per_page": TASKS_PER_PAGE,
+            "flash_type": flash_type,
+            "flash_message": flash_message,
         },
     )
 
@@ -130,7 +142,6 @@ def get_project_by_id(
 def edit_project_page(
     p_id: int,
     request: Request,
-    db: Session = Depends(get_db),
     user: User = Depends(require_user),
     project: Project = Depends(get_project_with_access),
 ):
@@ -167,12 +178,15 @@ def edit_project(
             {"user": user, "name": name, "description": description, "field_errors": field_errors},
         )
     project_service.edit_project(db, project, form)
+    request.session["flash_message"] = "Проект изменён!"
+    request.session["flash_type"] = "success"
     response = RedirectResponse(f"/projects/{p_id}", status_code=303)
     return response
 
 
 @router.post("/{p_id}/delete")
 def delete_project(
+    request: Request,
     p_id: int,
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
@@ -181,12 +195,15 @@ def delete_project(
     if not permission_service.can_delete_project(user, project):
         raise HTTPException(status_code=403, detail="Нет прав")
     project_service.delete_project(db, project)
+    request.session["flash_message"] = "Проект удалён! :("
+    request.session["flash_type"] = "success"
     response = RedirectResponse("/projects", status_code=303)
     return response
 
 
 @router.post("/{p_id}/members")
 def manage_member(
+    request: Request,
     p_id: int,
     member_id: int = Form(...),
     role: str = Form(""),
@@ -200,9 +217,13 @@ def manage_member(
     if action == "add":
         form = MemberForm(member_id=member_id, role=role)
         project_service.add_member(db, project, form)
+        request.session["flash_message"] = "В проекте на 1 участника больше!"
+        request.session["flash_type"] = "success"
     elif action == "remove":
         form = DeleteForm(member_id=member_id, project_id=project.id)
         project_service.delete_member(db, form)
+        request.session["flash_message"] = "В проекте на 1 участника меньше!"
+        request.session["flash_type"] = "success"
     response = RedirectResponse(f"/projects/{p_id}", status_code=303)
     return response
 
@@ -300,5 +321,7 @@ def create_task(
             },
         )
     task_service.create_task(db, user, p_id, form)
+    request.session["flash_message"] = "Задача создана!"
+    request.session["flash_type"] = "success"
     response = RedirectResponse(f"/projects/{p_id}", status_code=303)
     return response

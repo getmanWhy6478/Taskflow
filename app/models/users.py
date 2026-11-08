@@ -37,3 +37,9 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan"
     )
     my_project: Mapped["Project"] = relationship(back_populates="owner")
+
+    def get_role_in_project(self, project_id: int) -> str | None:
+        for membership in self.project_memberships:
+            if membership.project_id == project_id:
+                return membership.role
+        return None

@@ -1,11 +1,6 @@
 from sqlalchemy import select
 from starlette.testclient import TestClient
 
-from app.models import Priority, Project, Status, Task
-
-from sqlalchemy import select
-from starlette.testclient import TestClient
-
 from app.models import User
 
 
@@ -29,10 +24,7 @@ class TestProfileNameChange:
 
         response = client.post(
             "/profile",
-            data={
-                "action": "change_name",
-                "new_name": "new_name"
-            },
+            data={"action": "change_name", "new_name": "new_name"},
             follow_redirects=False,
         )
         assert response.status_code == 303
@@ -40,7 +32,6 @@ class TestProfileNameChange:
         updated_user = db_session.scalar(select(User).where(User.display_name == "new_name"))
         assert updated_user is not None
         assert updated_user.display_name == "new_name"
-
 
     def test_guest_cannot_change_name(self, client: TestClient):
         response = client.post(
@@ -60,7 +51,7 @@ class TestProfileNameChange:
 
 class TestProfilePasswordChange:
     def test_change_password_success(self, client: TestClient, create_user, db_session):
-        user = create_user("password_changer")
+        create_user("password_changer")
         client.post("/login", data={"username": "password_changer", "password": "testpass123"})
 
         response = client.post(
@@ -77,7 +68,7 @@ class TestProfilePasswordChange:
         assert response.status_code == 303
 
     def test_change_password_empty_fields(self, client: TestClient, create_user, db_session):
-        user = create_user("empty_fields")
+        create_user("empty_fields")
         client.post("/login", data={"username": "empty_fields", "password": "testpass123"})
 
         response = client.post(
@@ -88,7 +79,8 @@ class TestProfilePasswordChange:
                 "new_password": "",
                 "confirm_password": "",
                 "new_name": "",
-            }, follow_redirects=False
+            },
+            follow_redirects=False,
         )
         assert response.status_code == 200
         assert "Все поля пароля обязательны" in response.text
@@ -111,7 +103,7 @@ class TestProfilePasswordChange:
         assert "Пароли не совпадают" in response.text
 
     def test_change_password_wrong_current(self, client: TestClient, create_user, db_session):
-        user = create_user("wrong_current")
+        create_user("wrong_current")
         client.post("/login", data={"username": "wrong_current", "password": "testpass123"})
 
         response = client.post(

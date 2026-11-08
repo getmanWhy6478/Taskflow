@@ -19,9 +19,11 @@
 {% endfor %}
 
 <div class="d-flex justify-content-between align-items-start mb-4">
-  <div>
-    <h1 class="h3 mb-1">{{ project.name }}</h1>
-    <p class="text-muted mb-0">{{ project.description or 'Без описания' }}</p>
+  <div class="flex-grow-1" style="min-width: 0;">
+    <h1 class="h3 mb-1 text-truncate" title="{{ project.name }}">{{ project.name }}</h1>
+    <p class="text-muted mb-0 text-truncate" title="{{ project.description }}">
+      {{ project.description or 'Без описания' }}
+    </p>
   </div>
 
 
@@ -81,10 +83,8 @@
             <div class="text-muted" style="font-size: 0.75rem;">
               {% if member.id == project.owner_id %}
                 <i class="bi bi-star-fill text-warning"></i> Владелец
-              {% elif member.role == 'admin' %}
-                <i class="bi bi-shield-fill-check text-primary"></i> Админ
               {% else %}
-                Участник
+                {{member.get_role_in_project(project.id)}}
               {% endif %}
             </div>
           </div>
@@ -397,10 +397,12 @@
 
             <div class="mb-3">
               <label for="role" class="form-label">Роль в проекте</label>
-              <select class="form-select" id="role" name="role">
-                <option value="member" selected>Участник</option>
-                <option value="admin">Администратор</option>
-              </select>
+              <input type="text"
+                   class="form-control"
+                   id="role"
+                   name="role"
+                   value="{{ role if role else '' }}"
+                   maxlength="100">
             </div>
           {% else %}
             <div class="alert alert-info mb-0">

@@ -1,36 +1,22 @@
 from sqlalchemy import select
 from starlette.testclient import TestClient
 
-from app.models import Priority, Project, Status, Task, User
+from app.models import Priority, Project, Status, Task
 
 
 class TestCommentCreation:
     def test_create_comment_success(self, client: TestClient, create_user, db_session):
 
-        create_user("commenter")
-
-        client.post(
-            "/register",
-            data={
-                "username": "qwertyuiop[]",
-                "password": "qwertyuiop[]",
-                "display_name": "qwertyuiop[]",
-                "email": "qwertahdhdak@",
-            },
-        )
+        user = create_user("commenter")
 
         client.post("/login", data={"username": "commenter", "password": "testpass123"})
 
-        response = client.post(
+        client.post(
             "/projects/create",
             data={"name": "test project", "description": "Test Description"},
             follow_redirects=True,
         )
-
-        assert response.status_code in (200, 303), f"Проект не создался: {response.text}"
-
         project = db_session.scalar(select(Project).where(Project.name == "test project"))
-        user = db_session.scalar(select(User).where(User.username == "qwertyuiop[]"))
 
         client.post(
             f"/projects/{project.id}/tasks/create",

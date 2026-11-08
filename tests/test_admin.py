@@ -42,7 +42,6 @@ class TestBanUser:
         )
         assert response.status_code == 303
 
-        
         banned_user = db_session.scalar(select(User).where(User.username == "target"))
         assert banned_user is not None
         assert banned_user.is_banned is True
@@ -93,7 +92,6 @@ class TestUnbanUser:
         )
         assert response.status_code == 303
 
-        
         unbanned_user = db_session.scalar(select(User).where(User.username == "target"))
         assert unbanned_user is not None
         assert unbanned_user.is_banned is False
@@ -123,7 +121,6 @@ class TestMakeAdmin:
         )
         assert response.status_code == 303
 
-        
         new_admin = db_session.scalar(select(User).where(User.username == "target"))
         assert new_admin is not None
         assert new_admin.is_admin is True
@@ -141,7 +138,6 @@ class TestMakeAdmin:
         )
         assert response.status_code == 303
 
-        
         ex_admin = db_session.scalar(select(User).where(User.username == "target"))
         assert ex_admin is not None
         assert ex_admin.is_admin is False

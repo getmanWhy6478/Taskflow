@@ -17,8 +17,18 @@ router = APIRouter(prefix="/profile", tags=["profile"])
 
 @router.get("")
 def profile(request: Request, user: User = Depends(require_user)):
+    flash_message = request.session.pop("flash_message", None)
+    flash_type = request.session.pop("flash_type", "success")
     return templates.TemplateResponse(
-        request, "profile.html", {"user": user, "password_errors": None, "field_errors": None}
+        request,
+        "profile.html",
+        {
+            "user": user,
+            "password_errors": None,
+            "field_errors": None,
+            "flash_type": flash_type,
+            "flash_message": flash_message,
+        },
     )
 
 
@@ -48,6 +58,8 @@ def change_name_or_password(
                 {"user": user, "field_errors": field_errors, "new_name": new_name},
             )
         profile_services.change_name(db, user, form)
+        request.session["flash_message"] = "Имя успешно изменено!"
+        request.session["flash_type"] = "success"
         return RedirectResponse(url="/profile", status_code=303)
 
     elif action == "change_password":
@@ -81,5 +93,7 @@ def change_name_or_password(
                 {"user": user, "field_errors": field_errors, "new_name": new_name},
             )
         profile_services.change_password(db, user, form)
+        request.session["flash_message"] = "Пароль успешно изменён!"
+        request.session["flash_type"] = "success"
         return RedirectResponse(url="/profile", status_code=303)
     return RedirectResponse(url="/profile", status_code=303)
