@@ -67,7 +67,7 @@
           crossorigin="anonymous"></script>
 
   <script src="{{ url_for('static', path='app.js') }}"></script>
-<div class="toast-container position-fixed bottom-1 end-0 p-3" style="z-index: 1100">
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100">
   {% if flash_message %}
     <div id="flashToast" class="toast align-items-center text-bg-{{ flash_type }} border-0" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="d-flex">

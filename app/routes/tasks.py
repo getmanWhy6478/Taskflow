@@ -52,6 +52,8 @@ def edit_task_page(
     user: User = Depends(require_user),
     task: Task = Depends(get_task_with_access),
 ):
+    if not permission_service.can_edit_task(user, task):
+        raise HTTPException(status_code=403, detail="Нет прав")
     project = project_services.get_project_by_id(db, task.project_id)
     available_members = project_services.get_project_members(db, project)
     return templates.TemplateResponse(

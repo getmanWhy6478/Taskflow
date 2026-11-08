@@ -67,7 +67,7 @@ def get_project_tasks(
     sort_by: str,
     search: str,
     page: int,
-    per_page: int,
+    per_page: int|None = None,
 ) -> tuple[list[Task], int]:
     found = select(Task).where(Task.project_id == p_id)
 
@@ -106,8 +106,9 @@ def get_project_tasks(
 
     total_count = db.scalar(total_count) or 0
 
-    offset = (page - 1) * per_page
-    found = found.limit(per_page).offset(offset)
+    if per_page:
+        offset = (page - 1) * per_page
+        found = found.limit(per_page).offset(offset)
 
     return list(db.scalars(found)), total_count
 

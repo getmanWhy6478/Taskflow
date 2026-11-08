@@ -36,13 +36,14 @@
 
       </select>
     </form>
-
+    {%if task.project.owner_id == user.id or task.author_id == user.id%}
     <div class="d-flex gap-2">
       <span class="badge bg-info">{{ task.status.value }}</span>
       <a href="{{ url_for('edit_task_page', t_id=task.id) }}" class="btn btn-outline-primary btn-sm">
         <i class="bi bi-pencil"></i> Редактировать
       </a>
     </div>
+    {% endif %}
   </div>
 
   <div class="card-body">

@@ -7,7 +7,7 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from app.database import get_db
-from app.dependencies import get_project_with_access, require_user
+from app.dependencies import get_project_with_access, require_user, get_project_with_access_only_view
 from app.forms.delete import DeleteForm
 from app.forms.member import MemberForm
 from app.forms.project import ProjectForm
@@ -86,52 +86,24 @@ def get_project_by_id(
     p_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
-    status: str = Query(""),
-    priority: str = Query(""),
-    sort_by: str = Query("created_at"),
-    filter_member: str = Query(""),
-    sort_order: str = Query("desc"),
-    search: str = Query(""),
-    page: int = Query(1, ge=1),
-    project: Project = Depends(get_project_with_access),
+    project: Project = Depends(get_project_with_access_only_view),
 ):
     all_users = admin_service.get_all_users(db)
     available_users = project_service.get_available_users(db, p_id, all_users)
-
-    tasks, total_count = project_service.get_project_tasks(
-        db, p_id, status, priority, filter_member, sort_order, sort_by, search, page, TASKS_PER_PAGE
+    tasks, task_count = project_service.get_project_tasks(
+        db, p_id, "", "", "", "", "", "", 1,
     )
-
-    total_pages = max(1, (total_count + TASKS_PER_PAGE - 1) // TASKS_PER_PAGE)
-
-    if page > total_pages:
-        page = total_pages
-        return RedirectResponse(
-            f"projects/{p_id}",
-            status_code=303,
-        )
     flash_message = request.session.pop("flash_message", None)
     flash_type = request.session.pop("flash_type", "success")
     return templates.TemplateResponse(
         request,
         "projects/detail.html",
         {
-            "today": date.today(),
             "user": user,
-            "project": project,
             "tasks": tasks,
+            "project": project,
             "members": admin_service.get_all_users(db),
-            "priorities": Priority,
-            "statuses": Status,
             "available_users": available_users,
-            "status": status,
-            "priority": priority,
-            "filter_member": filter_member,
-            "search": search,
-            "page": page,
-            "total_pages": total_pages,
-            "total_count": total_count,
-            "tasks_per_page": TASKS_PER_PAGE,
             "flash_type": flash_type,
             "flash_message": flash_message,
         },
@@ -145,6 +117,8 @@ def edit_project_page(
     user: User = Depends(require_user),
     project: Project = Depends(get_project_with_access),
 ):
+    if not permission_service.can_edit_project(user, project):
+        raise HTTPException(status_code=403, detail="Нет прав")
     return templates.TemplateResponse(
         request, "projects/edit.html", {"user": user, "field_errors": None, "project": project}
     )
@@ -234,13 +208,45 @@ def get_project_tasks(
     p_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
-    project: Project = Depends(get_project_with_access),
+    project: Project = Depends(get_project_with_access_only_view),
+    status: str = Query(""),
+    priority: str = Query(""),
+    sort_by: str = Query("created_at"),
+    filter_member: str = Query(""),
+    sort_order: str = Query("desc"),
+    search: str = Query(""),
+    page: int = Query(1, ge=1),
 ):
-    tasks = project_service.get_project_tasks(db, p_id, "", "", "", "", "")
+    tasks, total_count = project_service.get_project_tasks(
+        db, p_id, status, priority, filter_member, sort_order, sort_by, search, page, TASKS_PER_PAGE
+    )
+
+    total_pages = max(1, (total_count + TASKS_PER_PAGE - 1) // TASKS_PER_PAGE)
+
+    if page > total_pages:
+        page = total_pages
+        return RedirectResponse(
+            f"projects/{p_id}",
+            status_code=303,
+        )
     return templates.TemplateResponse(
         request,
-        "projects/tasks.html",
-        {"user": user, "tasks": tasks, "project": project},
+        "projects/project_tasks.html",
+        {"user": user,
+         "today": date.today(),
+         "tasks": tasks,
+         "project": project,
+         "status": status,
+         "priority": priority,
+         "filter_member": filter_member,
+         "search": search,
+         "page": page,
+         "total_pages": total_pages,
+         "total_count": total_count,
+         "tasks_per_page": TASKS_PER_PAGE,
+         "priorities": Priority,
+         "statuses": Status,
+         },
     )
 
 
