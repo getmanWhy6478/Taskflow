@@ -66,6 +66,7 @@ def get_project_with_access(
 
     return project
 
+
 def get_project_with_access_only_view(
     p_id: int,
     user: User = Depends(require_user),

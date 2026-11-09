@@ -10,9 +10,7 @@ def can_edit_task(user: User, task: Task) -> bool:
 
 
 def can_edit_task_status(user: User, task: Task) -> bool:
-    return (
-        task.author_id == user.id or task.assignee_id == user.id
-    )
+    return task.author_id == user.id or task.assignee_id == user.id
 
 
 def can_delete_comment(user: User, comment: Comment) -> bool:

@@ -67,7 +67,7 @@ def get_project_tasks(
     sort_by: str,
     search: str,
     page: int,
-    per_page: int|None = None,
+    per_page: int | None = None,
 ) -> tuple[list[Task], int]:
     found = select(Task).where(Task.project_id == p_id)
 

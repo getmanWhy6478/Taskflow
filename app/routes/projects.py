@@ -7,7 +7,11 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from app.database import get_db
-from app.dependencies import get_project_with_access, require_user, get_project_with_access_only_view
+from app.dependencies import (
+    get_project_with_access,
+    get_project_with_access_only_view,
+    require_user,
+)
 from app.forms.delete import DeleteForm
 from app.forms.member import MemberForm
 from app.forms.project import ProjectForm
@@ -91,7 +95,15 @@ def get_project_by_id(
     all_users = admin_service.get_all_users(db)
     available_users = project_service.get_available_users(db, p_id, all_users)
     tasks, task_count = project_service.get_project_tasks(
-        db, p_id, "", "", "", "", "", "", 1,
+        db,
+        p_id,
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        1,
     )
     flash_message = request.session.pop("flash_message", None)
     flash_type = request.session.pop("flash_type", "success")
@@ -232,21 +244,22 @@ def get_project_tasks(
     return templates.TemplateResponse(
         request,
         "projects/project_tasks.html",
-        {"user": user,
-         "today": date.today(),
-         "tasks": tasks,
-         "project": project,
-         "status": status,
-         "priority": priority,
-         "filter_member": filter_member,
-         "search": search,
-         "page": page,
-         "total_pages": total_pages,
-         "total_count": total_count,
-         "tasks_per_page": TASKS_PER_PAGE,
-         "priorities": Priority,
-         "statuses": Status,
-         },
+        {
+            "user": user,
+            "today": date.today(),
+            "tasks": tasks,
+            "project": project,
+            "status": status,
+            "priority": priority,
+            "filter_member": filter_member,
+            "search": search,
+            "page": page,
+            "total_pages": total_pages,
+            "total_count": total_count,
+            "tasks_per_page": TASKS_PER_PAGE,
+            "priorities": Priority,
+            "statuses": Status,
+        },
     )
 
 
