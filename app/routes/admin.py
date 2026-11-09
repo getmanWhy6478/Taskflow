@@ -17,6 +17,7 @@ def get_users(request: Request, db: Session = Depends(get_db), user: User = Depe
     users = admin_service.get_all_users(db)
     flash_message = request.session.pop("flash_message", None)
     flash_type = request.session.pop("flash_type", "success")
+    tasks_count = admin_service.get_user_tasks(db)
     return templates.TemplateResponse(
         request,
         "admin.html",
@@ -25,6 +26,7 @@ def get_users(request: Request, db: Session = Depends(get_db), user: User = Depe
             "users": users,
             "flash_type": flash_type,
             "flash_message": flash_message,
+            "tasks_count": tasks_count
         },
     )
 

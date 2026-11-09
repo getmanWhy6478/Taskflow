@@ -33,7 +33,7 @@
 - Установленный [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
 
-### 🚀 Пошаговая установка
+### Пошаговая установка
 
 Убедитесь, что у вас установлен [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 
