@@ -8,7 +8,6 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 from starlette.responses import RedirectResponse, Response
-from app.services.activity_services import log_activity
 
 from app.database import get_db
 from app.dependencies import (
@@ -20,11 +19,12 @@ from app.forms.delete import DeleteForm
 from app.forms.member import MemberForm
 from app.forms.project import ProjectForm
 from app.forms.tasks import TaskForm
-from app.models import Priority, Project, Status, User, ActivityLog
+from app.models import Priority, Project, Status, User
 from app.services import admin_services as admin_service
 from app.services import permission_services as permission_service
 from app.services import project_services as project_service
 from app.services import task_services as task_service
+from app.services.activity_services import log_activity
 from app.templates.templates import templates
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -84,9 +84,13 @@ def create_project(
     p_m = MemberForm(member_id=user.id, role="Владелец")
     project_service.add_member(db, project, p_m)
     log_activity(
-        db, project.id, user.id,
-        "created", "project", project.id,
-        f"Проект «{project.name}» был создан"
+        db,
+        project.id,
+        user.id,
+        "created",
+        "project",
+        project.id,
+        f"Проект «{project.name}» был создан",
     )
     request.session["flash_message"] = "Проект реально создан!"
     request.session["flash_type"] = "success"
@@ -103,16 +107,7 @@ def get_project_by_id(
 ):
     all_users = admin_service.get_all_users(db)
     available_users = project_service.get_available_users(db, p_id, all_users)
-    tasks, task_count = project_service.get_project_tasks(
-        db,
-        p_id,
-        "",
-        "",
-        "",
-        "",
-        "",
-        ""
-    )
+    tasks, task_count = project_service.get_project_tasks(db, p_id, "", "", "", "", "", "")
     flash_message = request.session.pop("flash_message", None)
     flash_type = request.session.pop("flash_type", "success")
 
@@ -128,7 +123,7 @@ def get_project_by_id(
             "available_users": available_users,
             "flash_type": flash_type,
             "flash_message": flash_message,
-            "activities": activities
+            "activities": activities,
         },
     )
 
@@ -176,9 +171,13 @@ def edit_project(
         )
     project_service.edit_project(db, project, form)
     log_activity(
-        db, project.id, user.id,
-        "updated", "project", project.id,
-        f"Проект был изменён. Имя: «{project.name}», Описание: {project.description}"
+        db,
+        project.id,
+        user.id,
+        "updated",
+        "project",
+        project.id,
+        f"Проект был изменён. Имя: «{project.name}», Описание: {project.description}",
     )
     request.session["flash_message"] = "Проект изменён!"
     request.session["flash_type"] = "success"
@@ -221,9 +220,13 @@ def manage_member(
         form = MemberForm(member_id=member_id, role=role)
         project_service.add_member(db, project, form)
         log_activity(
-            db, project.id, user.id,
-            "member_added", "user", member_id,
-            f"Пользователь {db.get(User, member_id).display_name} добавлен в проект"
+            db,
+            project.id,
+            user.id,
+            "member_added",
+            "user",
+            member_id,
+            f"Пользователь {db.get(User, member_id).display_name} добавлен в проект",
         )
         request.session["flash_message"] = "В проекте на 1 участника больше!"
         request.session["flash_type"] = "success"
@@ -231,9 +234,13 @@ def manage_member(
         form = DeleteForm(member_id=member_id, project_id=project.id)
         project_service.delete_member(db, form)
         log_activity(
-            db, project.id, user.id,
-            "member_deleted", "user", member_id,
-            f"Пользователь {db.get(User, member_id).display_name} удалён из проекта"
+            db,
+            project.id,
+            user.id,
+            "member_deleted",
+            "user",
+            member_id,
+            f"Пользователь {db.get(User, member_id).display_name} удалён из проекта",
         )
         request.session["flash_message"] = "В проекте на 1 участника меньше!"
         request.session["flash_type"] = "success"
@@ -378,10 +385,14 @@ def create_task(
         )
     task = task_service.create_task(db, user, p_id, form)
     log_activity(
-        db, p_id, user.id,
-        "created", "task", task.id,
+        db,
+        p_id,
+        user.id,
+        "created",
+        "task",
+        task.id,
         f"создал задачу «{task.title}». Название: {title},  Статус: {status}, Приоритет: {priority},"
-        f" Назначенный: {db.get(User, assignee_id).display_name}, Выполнить до: {due_date}"
+        f" Назначенный: {db.get(User, assignee_id).display_name}, Выполнить до: {due_date}",
     )
     request.session["flash_message"] = "Задача создана!"
     request.session["flash_type"] = "success"
@@ -391,17 +402,17 @@ def create_task(
 
 @router.get("{p_id}/tasks/export")
 def export_tasks_csv(
-        p_id: int,
-        request: Request,
-        status: str = Query(""),
-        priority: str = Query(""),
-        filter_member: str = Query(""),
-        sort_by: str = Query("created_at"),
-        sort_order: str = Query("desc"),
-        search: str = Query(""),
-        db: Session = Depends(get_db),
-        user: User = Depends(require_user),
-        project = Depends(get_project_with_access),
+    p_id: int,
+    request: Request,
+    status: str = Query(""),
+    priority: str = Query(""),
+    filter_member: str = Query(""),
+    sort_by: str = Query("created_at"),
+    sort_order: str = Query("desc"),
+    search: str = Query(""),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+    project=Depends(get_project_with_access),
 ):
     if not project:
         raise HTTPException(404, "Проект не найден")
@@ -413,42 +424,46 @@ def export_tasks_csv(
     # Генерируем CSV
     output = io.StringIO()
     # UTF-8 BOM для корректного открытия в Excel
-    output.write('\ufeff')
+    output.write("\ufeff")
 
     writer = csv.writer(output, quoting=csv.QUOTE_ALL)
 
     # Заголовки
-    writer.writerow([
-        "ID",
-        "Название",
-        "Описание",
-        "Статус",
-        "Приоритет",
-        "Исполнитель",
-        "Создатель",
-        "Дата создания",
-        "Срок выполнения",
-        "Дата обновления",
-    ])
+    writer.writerow(
+        [
+            "ID",
+            "Название",
+            "Описание",
+            "Статус",
+            "Приоритет",
+            "Исполнитель",
+            "Создатель",
+            "Дата создания",
+            "Срок выполнения",
+            "Дата обновления",
+        ]
+    )
 
     # Данные
     for task in tasks:
-        writer.writerow([
-            task.id,
-            task.title,
-            task.description or "",
-            task.status.value if hasattr(task.status, "value") else str(task.status),
-            task.priority.value if hasattr(task.priority, "value") else str(task.priority),
-            task.assignee.username if task.assignee else "",
-            task.user.username if task.user else "",
-            task.created_at.strftime("%d.%m.%Y %H:%M") if task.created_at else "",
-            task.due_date.strftime("%d.%m.%Y") if task.due_date else "",
-            task.updated_at.strftime("%d.%m.%Y %H:%M") if task.updated_at else "",
-        ])
+        writer.writerow(
+            [
+                task.id,
+                task.title,
+                task.description or "",
+                task.status.value if hasattr(task.status, "value") else str(task.status),
+                task.priority.value if hasattr(task.priority, "value") else str(task.priority),
+                task.assignee.username if task.assignee else "",
+                task.user.username if task.user else "",
+                task.created_at.strftime("%d.%m.%Y %H:%M") if task.created_at else "",
+                task.due_date.strftime("%d.%m.%Y") if task.due_date else "",
+                task.updated_at.strftime("%d.%m.%Y %H:%M") if task.updated_at else "",
+            ]
+        )
 
     date_str = datetime.now().strftime("%Y%m%d_%H%M")
 
-    safe_name = "".join(c for c in project.name if c.isalnum() or c in (' ', '_', '-')).strip()
+    safe_name = "".join(c for c in project.name if c.isalnum() or c in (" ", "_", "-")).strip()
     raw_filename = f"tasks_{safe_name}_{date_str}.csv"
 
     encoded_filename = urllib.parse.quote(raw_filename)
@@ -456,7 +471,5 @@ def export_tasks_csv(
     return Response(
         content=output.getvalue(),
         media_type="text/csv; charset=utf-8",
-        headers={
-            "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
-        },
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"},
     )

@@ -18,7 +18,6 @@ from app.routes.projects import router as project_router
 from app.routes.tasks import router as task_router
 from app.templates.templates import templates
 
-
 app = FastAPI(title="TaskFlow")
 
 app.add_middleware(
@@ -41,7 +40,6 @@ app.include_router(admin_router)
 app.include_router(comment_router)
 app.include_router(dashboard_router)
 app.include_router(profile_router)
-
 
 
 @app.get("/")

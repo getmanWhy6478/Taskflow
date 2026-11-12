@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
+
 from app.models.log_activity import ActivityLog
+
 
 def log_activity(
     db: Session,
@@ -8,7 +10,7 @@ def log_activity(
     action: str,
     target_type: str,
     target_id: int | None,
-    details: str
+    details: str,
 ):
     log = ActivityLog(
         project_id=project_id,
@@ -16,7 +18,7 @@ def log_activity(
         action=action,
         target_type=target_type,
         target_id=target_id,
-        details=details
+        details=details,
     )
     db.add(log)
     db.commit()

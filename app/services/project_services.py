@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List
 
 from sqlalchemy import asc, case, desc, func, or_, select
 from sqlalchemy.orm import Session
@@ -7,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.forms.delete import DeleteForm
 from app.forms.member import MemberForm
 from app.forms.project import ProjectForm
-from app.models import Priority, Project, ProjectsMember, Task, User, ActivityLog
+from app.models import ActivityLog, Priority, Project, ProjectsMember, Task, User
 
 
 def create_project(db: Session, form: ProjectForm, user: User) -> Project:
@@ -126,6 +125,12 @@ def delete_member(db: Session, form: DeleteForm) -> None:
     db.commit()
     return
 
-def get_activities(db: Session, project: Project) -> List[ActivityLog]:
-    activities = select(ActivityLog).where(ActivityLog.project_id == project.id).order_by(ActivityLog.created_at.asc()).limit(15)
+
+def get_activities(db: Session, project: Project) -> list[ActivityLog]:
+    activities = (
+        select(ActivityLog)
+        .where(ActivityLog.project_id == project.id)
+        .order_by(ActivityLog.created_at.asc())
+        .limit(15)
+    )
     return list(db.scalars(activities))

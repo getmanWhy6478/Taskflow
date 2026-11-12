@@ -26,7 +26,7 @@ def get_users(request: Request, db: Session = Depends(get_db), user: User = Depe
             "users": users,
             "flash_type": flash_type,
             "flash_message": flash_message,
-            "tasks_count": tasks_count
+            "tasks_count": tasks_count,
         },
     )
 

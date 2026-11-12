@@ -7,7 +7,6 @@ from app.forms.tasks import TaskForm
 from app.models import Comment, Status, Task, User
 
 
-
 def create_task(db: Session, user: User, p_id: int, form: TaskForm) -> Task:
     task = Task(
         title=form.title,
