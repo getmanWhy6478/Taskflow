@@ -38,6 +38,8 @@ class User(Base):
     )
     my_project: Mapped["Project"] = relationship(back_populates="owner")
 
+    activities = relationship("ActivityLog", back_populates="user")
+
     def get_role_in_project(self, project_id: int) -> str | None:
         for membership in self.project_memberships:
             if membership.project_id == project_id:

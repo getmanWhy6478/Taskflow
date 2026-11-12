@@ -13,7 +13,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
     <h1 class="h3 mb-1">
-      <i class="bi bi-list-check"></i> Задачи проекта
+      <i class="bi bi-kanban"></i> Канбан-доска
     </h1>
     <p class="text-muted mb-0">{{ project.name }}</p>
   </div>
@@ -21,6 +21,12 @@
     <a href="{{ url_for('get_project_by_id', p_id=project.id) }}" class="btn btn-outline-secondary">
       <i class="bi bi-arrow-left"></i> Назад к проекту
     </a>
+
+    <a href="{{ url_for('export_tasks_csv', p_id=project.id)}}?{{ request.url.query }}"
+       class="btn btn-outline-success">
+      <i class="bi bi-file-earmark-spreadsheet"></i> Экспорт CSV
+    </a>
+
     <a href="{{ url_for('create_task', p_id=project.id) }}" class="btn btn-primary">
       <i class="bi bi-plus-lg"></i> Создать задачу
     </a>
@@ -28,7 +34,7 @@
 </div>
 
 <form method="get" class="row g-2 mb-4">
-  <div class="col-md-3">
+  <div class="col-md-4">
     <select name="status" class="form-select">
       <option value="">Все статусы</option>
       {% for s in statuses %}
@@ -38,7 +44,7 @@
       {% endfor %}
     </select>
   </div>
-  <div class="col-md-3">
+  <div class="col-md-4">
     <select name="priority" class="form-select">
       <option value="">Все приоритеты</option>
       {% for p in priorities %}
@@ -48,7 +54,7 @@
       {% endfor %}
     </select>
   </div>
-  <div class="col-md-3">
+  <div class="col-md-4">
     <select name="filter_member" class="form-select">
       <option value="">Все пользователи</option>
       {% for u in project.members %}
@@ -58,7 +64,7 @@
       {% endfor %}
     </select>
   </div>
-  <div class="col-md-3">
+  <div class="col-md-4">
     <select name="sort_by" class="form-select">
       <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>
         Сначала новые
@@ -75,7 +81,7 @@
     </select>
   </div>
 
-  <div class="col-md-6">
+  <div class="col-md-4">
     <select name="sort_order" class="form-select">
       <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>
         По убыванию
@@ -85,7 +91,7 @@
       </option>
     </select>
   </div>
-  <div class="col-md-6">
+  <div class="col-md-4">
     <div class="input-group">
       <span class="input-group-text">
         <i class="bi bi-search"></i>
@@ -108,189 +114,80 @@
   </div>
 </form>
 
-<div class="card shadow-sm">
-  <div class="card-header bg-white d-flex justify-content-between align-items-center">
-    <h2 class="h5 mb-0">
-      <i class="bi bi-list-check"></i> Задачи
-      <span class="badge bg-secondary">{{ total_count }}</span>
-    </h2>
-    <small class="text-muted">
-      Страница {{ page }} из {{ total_pages }}
-    </small>
-  </div>
+<div class="kanban-board">
+  {% for status_name in ["Новая", "В работе", "Выполнена"] %}
+  <div class="kanban-column" data-status="{{ status_name }}">
+    <div class="kanban-column-header">
+      <h2 class="h6 mb-0">
+        {% if status_name == "Новая" %}
+          <i class="bi bi-circle text-secondary"></i>
+        {% elif status_name == "В работе" %}
+          <i class="bi bi-play-circle text-primary"></i>
+        {% elif status_name == "Выполнена" %}
+          <i class="bi bi-check-circle text-success"></i>
+        {% endif %}
+        {{ status_name }}
+        <span class="badge bg-light text-dark ms-2">
+          {{ tasks_by_status[status_name]|length }}
+        </span>
+      </h2>
+    </div>
 
-  <div class="card-body p-0">
-    {% if tasks %}
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th style="width: 35%;">Название</th>
-              <th style="width: 12%;">Статус</th>
-              <th style="width: 12%;">Приоритет</th>
-              <th style="width: 15%;">Исполнитель</th>
-              <th style="width: 13%;">Срок</th>
-              <th style="width: 13%;">Обновлена</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for task in tasks %}
-              <tr class="task-row">
-                <td>
-                  <a href="{{ url_for('get_task', t_id=task.id) }}" class="text-decoration-none fw-semibold">
-                    {{ task.title }}
-                  </a>
-                  {% if task.description %}
-                    <div class="text-muted small text-truncate" style="max-width: 300px;">
-                      {{ task.description }}
-                    </div>
-                  {% endif %}
-                </td>
-                <td>
-                  <span class="badge
-                    {% if task.status.value == 'Выполнена' %}bg-success
-                    {% elif task.status.value == 'В работе' %}bg-primary
-                    {% else %}bg-secondary{% endif %}">
-                    {{ task.status.value }}
-                  </span>
-                </td>
-                <td>
-                  <span class="badge
-                    {% if task.priority.value == 'Высокий' %}bg-danger
-                    {% elif task.priority.value == 'Средний' %}bg-warning text-dark
-                    {% else %}bg-success{% endif %}">
-                    {{ task.priority.value }}
-                  </span>
-                </td>
-                <td>
-                  {% if task.assignee %}
-                    <div class="d-flex align-items-center gap-2">
-                      <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center"
-                           style="width: 28px; height: 28px;">
-                        <i class="bi bi-person-fill small"></i>
-                      </div>
-                      <span>{{ task.assignee.display_name or task.assignee.username }}</span>
-                    </div>
-                  {% else %}
-                    <span class="text-muted small">
-                      <i class="bi bi-person-x"></i> Не назначен
-                    </span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if task.due_date %}
-                    {% set is_overdue = task.due_date < today and task.status.value != 'Выполнена' %}
-                    <span class="{% if is_overdue %}text-danger fw-semibold{% endif %}">
-                      <i class="bi bi-calendar-event"></i>
-                      {{ task.due_date.strftime("%d.%m.%Y") }}
-                    </span>
-                  {% else %}
-                    <span class="text-muted">—</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if task.updated_at %}
-                    <span class="text-muted small" title="{{ task.updated_at.strftime('%d.%m.%Y %H:%M') }}">
-                      {{ task.updated_at.strftime("%d.%m.%Y") }}
-                    </span>
-                  {% else %}
-                    <span class="text-muted">—</span>
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+    <div class="kanban-cards" data-status="{{ status_name }}">
+      {% for task in tasks_by_status[status_name] %}
+      <div class="kanban-card"
+           draggable="true"
+           data-task-id="{{ task.id }}"
+           data-status="{{ task.status.value }}">
 
-      {% if total_pages > 1 %}
-        <div class="card-footer bg-white">
-          <nav aria-label="Навигация по страницам">
-            <ul class="pagination justify-content-center mb-0">
-
-
-              {% if page > 1 %}
-                <li class="page-item">
-                  <a class="page-link"
-                     href="{{ request.url.include_query_params(page=1) }}">
-                    <i class="bi bi-chevron-double-left"></i>
-                  </a>
-                </li>
-              {% endif %}
-
-              {% if page > 1 %}
-                <li class="page-item">
-                  <a class="page-link"
-                     href="{{ request.url.include_query_params(page=page - 1) }}">
-                    <i class="bi bi-chevron-left"></i>
-                  </a>
-                </li>
-              {% else %}
-                <li class="page-item disabled">
-                  <span class="page-link"><i class="bi bi-chevron-left"></i></span>
-                </li>
-              {% endif %}
-
-              {% for p in range(1, total_pages + 1) %}
-                {% if p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
-                  <li class="page-item {% if p == page %}active{% endif %}">
-                    <a class="page-link"
-                       href="{{ request.url.include_query_params(page=p) }}">
-                      {{ p }}
-                    </a>
-                  </li>
-                {% elif p == page - 3 or p == page + 3 %}
-                  <li class="page-item disabled">
-                    <span class="page-link">…</span>
-                  </li>
-                {% endif %}
-              {% endfor %}
-
-              {% if page < total_pages %}
-                <li class="page-item">
-                  <a class="page-link"
-                     href="{{ request.url.include_query_params(page=page+1) }}">
-                    <i class="bi bi-chevron-right"></i>
-                  </a>
-                </li>
-              {% else %}
-                <li class="page-item disabled">
-                  <span class="page-link"><i class="bi bi-chevron-right"></i></span>
-                </li>
-              {% endif %}
-
-              {% if page < total_pages %}
-                <li class="page-item">
-                  <a class="page-link"
-                     href="{{ request.url.include_query_params(page=total_pages)}}">
-                    <i class="bi bi-chevron-double-right"></i>
-                  </a>
-                </li>
-              {% endif %}
-
-            </ul>
-          </nav>
-
-          <div class="text-center mt-2 small text-muted">
-            Показано {{ ((page - 1) * tasks_per_page) + 1 }}–{{ [page * tasks_per_page, total_count]|min }}
-            из {{ total_count }} задач
-          </div>
+        <div class="kanban-card-header">
+          <span class="priority-badge priority-{{ task.priority.value }}">
+            {% if task.priority.value == "Высокий" %}
+              🔴 Высокий
+            {% elif task.priority.value == "Средний" %}
+              🟡 Средний
+            {% else %}
+              🟢 Низкий
+            {% endif %}
+          </span>
+          <a href="{{ url_for('get_task', t_id=task.id) }}" class="kanban-card-link">
+            <i class="bi bi-arrow-up-right"></i>
+          </a>
         </div>
-      {% endif %}
 
-    {% else %}
-      <div class="text-center py-5">
-        <i class="bi bi-inbox display-1 text-muted"></i>
-        <p class="text-muted mt-3 mb-0">
-          {% if search or status or priority %}
-            По заданным фильтрам задач не найдено
-          {% else %}
-            Задач пока нет
+        <h3 class="kanban-card-title">{{ task.title }}</h3>
+
+        {% if task.description %}
+          <p class="kanban-card-description">
+            {{ task.description[:80] }}{% if task.description|length > 80 %}...{% endif %}
+          </p>
+        {% endif %}
+
+        <div class="kanban-card-footer">
+          {% if task.assignee %}
+            <div class="assignee-avatar" title="{{ task.assignee.display_name or task.assignee.username }}">
+              {{ (task.assignee.display_name or task.assignee.username)[0]|upper }}
+            </div>
           {% endif %}
-        </p>
+          {% if task.due_date %}
+            {% set is_overdue = task.due_date < today and task.status.value != 'Выполнена' %}
+            <span class="due-date {% if is_overdue %}overdue{% endif %}">
+              <i class="bi bi-calendar"></i> {{ task.due_date.strftime('%d.%m') }}
+            </span>
+          {% endif %}
+        </div>
       </div>
-    {% endif %}
+      {% endfor %}
+
+      {% if not tasks_by_status[status_name] %}
+      <div class="kanban-empty">
+        <i class="bi bi-inbox"></i>
+        <p>Перетащите задачу сюда</p>
+      </div>
+      {% endif %}
+    </div>
   </div>
+  {% endfor %}
 </div>
 
 {% endblock %}

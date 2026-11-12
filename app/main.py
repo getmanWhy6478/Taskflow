@@ -1,12 +1,11 @@
 from pathlib import Path
 from urllib.parse import quote
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.requests import Request
 
 from app.config import settings
 from app.dependencies import AuthRequiredException
@@ -18,6 +17,7 @@ from app.routes.profile import router as profile_router
 from app.routes.projects import router as project_router
 from app.routes.tasks import router as task_router
 from app.templates.templates import templates
+
 
 app = FastAPI(title="TaskFlow")
 
@@ -33,6 +33,7 @@ app.mount(
     StaticFiles(directory=Path(__file__).parent / "static"),
     name="static",
 )
+
 app.include_router(auth_router)
 app.include_router(project_router)
 app.include_router(task_router)
@@ -42,6 +43,7 @@ app.include_router(dashboard_router)
 app.include_router(profile_router)
 
 
+
 @app.get("/")
 def index():
     return RedirectResponse("/dashboard", status_code=303)
@@ -49,7 +51,6 @@ def index():
 
 @app.exception_handler(HTTPException)
 def http_exception_handler(request: Request, exc: HTTPException):
-
     if exc.status_code == 404:
         return templates.TemplateResponse(
             request,

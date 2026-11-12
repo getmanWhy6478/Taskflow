@@ -5,5 +5,6 @@ from app.models.projects import Project
 from app.models.status import Status
 from app.models.tasks import Task
 from app.models.users import User
+from app.models.log_activity import ActivityLog
 
-__all__ = ["User", "Project", "Task", "Comment", "Status", "Priority", "ProjectsMember"]
+__all__ = ["User", "Project", "Task", "Comment", "Status", "Priority", "ProjectsMember", "ActivityLog"]

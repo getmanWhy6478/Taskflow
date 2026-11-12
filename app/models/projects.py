@@ -33,3 +33,5 @@ class Project(Base):
         back_populates="project", cascade="all, delete-orphan"
     )
     owner: Mapped["User"] = relationship(back_populates="my_project")
+
+    activities = relationship("ActivityLog", back_populates="project")

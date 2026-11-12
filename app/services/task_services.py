@@ -7,7 +7,8 @@ from app.forms.tasks import TaskForm
 from app.models import Comment, Status, Task, User
 
 
-def create_task(db: Session, user: User, p_id: int, form: TaskForm) -> None:
+
+def create_task(db: Session, user: User, p_id: int, form: TaskForm) -> Task:
     task = Task(
         title=form.title,
         description=form.description,
@@ -21,7 +22,7 @@ def create_task(db: Session, user: User, p_id: int, form: TaskForm) -> None:
     db.add(task)
     db.commit()
     db.refresh(task)
-    return
+    return task
 
 
 def update_task(db: Session, task: Task, form: TaskForm) -> None:

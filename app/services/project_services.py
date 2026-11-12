@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 
 from sqlalchemy import asc, case, desc, func, or_, select
 from sqlalchemy.orm import Session
@@ -6,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.forms.delete import DeleteForm
 from app.forms.member import MemberForm
 from app.forms.project import ProjectForm
-from app.models import Priority, Project, ProjectsMember, Task, User
+from app.models import Priority, Project, ProjectsMember, Task, User, ActivityLog
 
 
 def create_project(db: Session, form: ProjectForm, user: User) -> Project:
@@ -66,8 +67,6 @@ def get_project_tasks(
     order: str,
     sort_by: str,
     search: str,
-    page: int,
-    per_page: int | None = None,
 ) -> tuple[list[Task], int]:
     found = select(Task).where(Task.project_id == p_id)
 
@@ -106,10 +105,6 @@ def get_project_tasks(
 
     total_count = db.scalar(total_count) or 0
 
-    if per_page:
-        offset = (page - 1) * per_page
-        found = found.limit(per_page).offset(offset)
-
     return list(db.scalars(found)), total_count
 
 
@@ -130,3 +125,7 @@ def delete_member(db: Session, form: DeleteForm) -> None:
     db.delete(project_member)
     db.commit()
     return
+
+def get_activities(db: Session, project: Project) -> List[ActivityLog]:
+    activities = select(ActivityLog).where(ActivityLog.project_id == project.id).order_by(ActivityLog.created_at.asc()).limit(15)
+    return list(db.scalars(activities))

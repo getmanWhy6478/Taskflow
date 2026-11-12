@@ -17,6 +17,8 @@ from app.services import project_services as project_services
 from app.services import task_services as task_service
 from app.templates.templates import templates
 
+from app.services.activity_services import log_activity
+
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
@@ -65,7 +67,7 @@ def edit_task_page(
             "field_errors": None,
             "statuses": Status,
             "priorities": Priority,
-            "members": available_members,
+            "members": available_members
         },
     )
 
@@ -120,6 +122,12 @@ def edit_task(
             },
         )
     task_service.update_task(db, task, form)
+    log_activity(
+        db, task.project.id, user.id,
+        "task_updated", "task", task.id,
+        f"Задача {task.title} была изменена. Название: {title},  Статус: {status}, Приоритет: {priority},"
+        f" Назначенный: {db.get(User, assignee_id).display_name}, Выполнить до: {due_date}",
+    )
     request.session["flash_message"] = "Задача изменена!"
     request.session["flash_type"] = "success"
     response = RedirectResponse(f"/tasks/{t_id}", status_code=303)
@@ -146,14 +154,32 @@ def edit_status(
 
     current_status = task.status.value
     next_status = status
+    project = project_services.get_project_by_id(db, task.project_id)
+    filters = request.session.pop(f"filters_{project.id}", {})
 
+    redirect_url = f"/projects/{project.id}/tasks"
+    params = []
+    for key, value in filters.items():
+        if value is not None and value != "":
+            params.append(f"{key}={value}")
+
+    if params:
+        redirect_url += "?" + "&".join(params)
     if next_status not in allowed_transitions[current_status]:
-        raise HTTPException(400, f"Переход из '{current_status}' в '{next_status}' не разрешён")
+        request.session["flash_message"] = f"Переход из '{current_status}' в '{next_status}' не разрешён"
+        request.session["flash_type"] = "warning"
+        return RedirectResponse(redirect_url, status_code=303)
     task_service.update_task_status(db, task, next_status)
     request.session["flash_message"] = "Статус изменён!"
     request.session["flash_type"] = "success"
+
+    log_activity(
+        db, task.project.id, user.id,
+        "task_updated_status", "task", task.id,
+        f"Статус задачи {task.title} изменён на: {next_status}",
+    )
     return RedirectResponse(
-        f"/tasks/{t_id}",
+        redirect_url,
         status_code=303,
     )
 
@@ -172,6 +198,11 @@ def delete_task(
     request.session["flash_message"] = "Задачи больше нет!"
     request.session["flash_type"] = "success"
     response = RedirectResponse("/projects", status_code=303)
+    log_activity(
+        db, task.project.id, user.id,
+        "task_deleted", "task", task.id,
+        f"Задача {task.title} была удалена",
+    )
     return response
 
 
