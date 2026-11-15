@@ -7,7 +7,12 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from app.database import get_db
-from app.dependencies import get_task_with_access, get_task_with_access_only_view, require_user
+from app.dependencies import (
+    get_csrf_token,
+    get_task_with_access,
+    get_task_with_access_only_view,
+    require_user,
+)
 from app.forms.comment import CommentForm
 from app.forms.tasks import TaskForm
 from app.models import Priority, Status, Task, User
@@ -28,6 +33,7 @@ def get_task(
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
     task: Task = Depends(get_task_with_access_only_view),
+    csrf_token: str = Depends(get_csrf_token),
 ):
     comments = task_service.get_tasks_comments(db, task)
     flash_message = request.session.pop("flash_message", None)
@@ -41,6 +47,7 @@ def get_task(
             "comments": comments,
             "flash_message": flash_message,
             "flash_type": flash_type,
+            "csrf_token": csrf_token,
         },
     )
 
@@ -52,6 +59,7 @@ def edit_task_page(
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
     task: Task = Depends(get_task_with_access),
+    csrf_token: str = Depends(get_csrf_token),
 ):
     if not permission_service.can_edit_task(user, task):
         raise HTTPException(status_code=403, detail="Нет прав")
@@ -67,6 +75,7 @@ def edit_task_page(
             "statuses": Status,
             "priorities": Priority,
             "members": available_members,
+            "csrf_token": csrf_token,
         },
     )
 
@@ -84,6 +93,7 @@ def edit_task(
     status: Status = Form(...),
     priority: Priority = Form(...),
     task: Task = Depends(get_task_with_access),
+    csrf_token: str = Form(...),
 ):
     title = title.lower()
     description = description.lower()
@@ -145,6 +155,7 @@ def edit_status(
     user: User = Depends(require_user),
     status: str = Form(...),
     task: Task = Depends(get_task_with_access),
+    csrf_token: str = Form(...),
 ):
     if not permission_service.can_edit_task_status(user, task):
         raise HTTPException(status_code=403, detail="Нет прав")
@@ -200,6 +211,7 @@ def delete_task(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
     task: Task = Depends(get_task_with_access),
+    csrf_token: str = Form(...),
 ):
     if not permission_service.can_delete_task(user, task):
         raise HTTPException(status_code=403, detail="Нет прав")
@@ -227,6 +239,7 @@ def add_comment(
     db: Session = Depends(get_db),
     text: str = Form(...),
     task: Task = Depends(get_task_with_access),
+    csrf_token: str = Form(...),
 ):
     form = CommentForm(text=text)
     comment_service.create_comment(db, form, task, user)

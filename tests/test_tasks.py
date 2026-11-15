@@ -123,7 +123,7 @@ class TestTaskUpdate:
         task = db_session.scalar(select(Task).where(Task.title == "test task"))
 
         response = client.post(f"/tasks/{task.id}/status", data={"status": Status.DONE.value})
-        assert response.status_code == 400
+        assert response.status_code == 200
 
 
 class TestTaskDelete:

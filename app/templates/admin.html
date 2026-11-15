@@ -147,12 +147,14 @@
                   {% if u.id != user.id %}
                     {% if u.is_banned %}
                       <form method="post" action="{{ url_for('unban_user', u_id=u.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <button type="submit" class="btn btn-outline-success" title="Разблокировать">
                           <i class="bi bi-unlock"></i>
                         </button>
                       </form>
                     {% else %}
                       <form method="post" action="{{ url_for('ban_user', u_id=u.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <button type="submit" class="btn btn-outline-danger" title="Заблокировать"
                                 onclick="return confirm('Заблокировать пользователя {{ u.username }}?');">
                           <i class="bi bi-lock"></i>
@@ -162,6 +164,7 @@
 
                     {% if u.is_admin %}
                       <form method="post" action="{{ url_for('make_user_admin', u_id=u.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <input type="hidden" name="action" value="remove_admin">
                         <button type="submit" class="btn btn-outline-warning" title="Снять роль администратора"
                                 onclick="return confirm('Снять роль администратора у {{ u.username }}?');">
@@ -170,6 +173,7 @@
                       </form>
                     {% else %}
                       <form method="post" action="{{ url_for('make_user_admin', u_id=u.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <input type="hidden" name="action" value="make_admin">
                         <button type="submit" class="btn btn-outline-primary" title="Назначить администратором"
                                 onclick="return confirm('Назначить {{ u.username }} администратором?');">

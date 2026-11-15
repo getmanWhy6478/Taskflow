@@ -46,6 +46,7 @@
         {% endif %}
 
         <form method="post" action="{{ url_for('change_name_or_password') }}" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <div class="mb-3">
             <input type="hidden" name="action" value="change_name">
             <label for="new_name" class="form-label">Отображаемое имя</label>
@@ -88,6 +89,7 @@
         {% endif %}
 
         <form method="post" action="{{ url_for('change_name_or_password') }}" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <input type="hidden" name="action" value="change_password">
           <div class="mb-3">
             <label for="current_password" class="form-label">

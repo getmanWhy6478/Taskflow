@@ -1,10 +1,17 @@
 from fastapi import Depends, HTTPException, Request
+from fastapi_csrf_protect import CsrfProtect
 from sqlalchemy.orm import Session
 from starlette.responses import RedirectResponse
 
 from app.database import get_db
 from app.forms import project
 from app.models import Comment, Project, Task, User
+
+
+def get_csrf_token(request: Request):
+    csrf_protect = CsrfProtect()
+    csrf_token, _ = csrf_protect.generate_csrf_tokens()
+    return csrf_token
 
 
 class AuthRequiredException(HTTPException):

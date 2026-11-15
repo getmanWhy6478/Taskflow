@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Form
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
@@ -18,6 +18,7 @@ def delete_comment(
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
     comment: Comment = Depends(delete_comment_with_access),
+    csrf_token: str = Form(...),
 ):
     comment_service.delete_comment(db, comment)
     request.session["flash_message"] = "Комментарий удалён"

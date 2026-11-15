@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies import require_user
+from app.dependencies import get_csrf_token, require_user
 from app.models.users import User
 from app.services import stats_service
 from app.services import task_services as task_service
@@ -12,7 +12,12 @@ router = APIRouter()
 
 
 @router.get("/dashboard")
-def dashboard(request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def dashboard(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+    csrf_token: str = Depends(get_csrf_token),
+):
     stats = stats_service.get_stats(db, user)
     recent_tasks = task_service.get_recent_tasks(db, user, limit=5)
     flash_message = request.session.pop("flash_message", None)
@@ -27,5 +32,6 @@ def dashboard(request: Request, db: Session = Depends(get_db), user: User = Depe
             "recent_tasks": recent_tasks,
             "flash_type": flash_type,
             "flash_message": flash_message,
+            "csrf_token": csrf_token,
         },
     )

@@ -48,8 +48,34 @@ def client(db_session):
             pass
 
     app.dependency_overrides[get_db] = override_get_db
+
     with TestClient(app) as test_client:
+        _original_post = test_client.post
+
+        def _get_csrf_token():
+            token = test_client.cookies.get("csrf_token")
+            if not token:
+                test_client.get("/")
+                token = test_client.cookies.get("csrf_token")
+            return token
+
+        def _add_csrf(kwargs):
+            csrf_token = _get_csrf_token()
+            if csrf_token:
+                if "data" in kwargs and isinstance(kwargs["data"], dict):
+                    kwargs["data"]["csrf_token"] = csrf_token
+                elif "data" not in kwargs:
+                    kwargs["data"] = {"csrf_token": csrf_token}
+            return kwargs
+
+        def patched_post(*args, **kwargs):
+            kwargs = _add_csrf(kwargs)
+            return _original_post(*args, **kwargs)
+
+        test_client.post = patched_post
+
         yield test_client
+
     app.dependency_overrides.clear()
 
 

@@ -33,6 +33,7 @@
         {% endif %}
 
         <form method="post" action="{{ url_for('create_task', p_id=project.id) }}" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <div class="mb-3">
             <label for="title" class="form-label">Название <span class="text-danger">*</span></label>
             <input type="text" 

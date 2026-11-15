@@ -77,27 +77,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     column.addEventListener('drop', (e) => {
-      e.preventDefault();
-      column.classList.remove('drag-over');
+    e.preventDefault();
+    column.classList.remove('drag-over');
 
-      const taskId = e.dataTransfer.getData('text/plain');
-      const newStatus = column.dataset.status;
+    const taskId = e.dataTransfer.getData('text/plain');
+    const newStatus = column.dataset.status;
 
-      if (!taskId || !newStatus) return;
+    if (!taskId || !newStatus) return;
 
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = `/tasks/${taskId}/status`;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'status';
-      input.value = newStatus;
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/tasks/${taskId}/status`;
 
-      form.appendChild(input);
-      document.body.appendChild(form);
+    const statusInput = document.createElement('input');
+    statusInput.type = 'hidden';
+    statusInput.name = 'status';
+    statusInput.value = newStatus;
 
-      form.submit();
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrf_token';
+    csrfInput.value = csrfToken;
+
+    form.appendChild(statusInput);
+    form.appendChild(csrfInput);
+    document.body.appendChild(form);
+    form.submit();
     });
   });
 

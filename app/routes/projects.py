@@ -11,6 +11,7 @@ from starlette.responses import RedirectResponse, Response
 
 from app.database import get_db
 from app.dependencies import (
+    get_csrf_token,
     get_project_with_access,
     get_project_with_access_only_view,
     require_user,
@@ -34,7 +35,10 @@ TASKS_PER_PAGE = 10
 
 @router.get("")
 def get_projects(
-    request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+    csrf_token: str = Depends(get_csrf_token),
 ):
     projects = project_service.get_all_projects(db, user)
     flash_message = request.session.pop("flash_message", None)
@@ -47,14 +51,19 @@ def get_projects(
             "projects": projects,
             "flash_message": flash_message,
             "flash_type": flash_type,
+            "csrf_token": csrf_token,
         },
     )
 
 
 @router.get("/create")
-def create_project_page(request: Request, user: User = Depends(require_user)):
+def create_project_page(
+    request: Request, user: User = Depends(require_user), csrf_token: str = Depends(get_csrf_token)
+):
     return templates.TemplateResponse(
-        request, "projects/create.html", {"user": user, "field_errors": None}
+        request,
+        "projects/create.html",
+        {"user": user, "field_errors": None, "csrf_token": csrf_token},
     )
 
 
@@ -65,6 +74,7 @@ def create_project(
     name: str = Form(...),
     description: str = Form(""),
     db: Session = Depends(get_db),
+    csrf_token: str = Form(...),
 ):
     try:
         form = ProjectForm(name=name, description=description)
@@ -104,6 +114,7 @@ def get_project_by_id(
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
     project: Project = Depends(get_project_with_access_only_view),
+    csrf_token: str = Depends(get_csrf_token),
 ):
     all_users = admin_service.get_all_users(db)
     available_users = project_service.get_available_users(db, p_id, all_users)
@@ -124,6 +135,7 @@ def get_project_by_id(
             "flash_type": flash_type,
             "flash_message": flash_message,
             "activities": activities,
+            "csrf_token": csrf_token,
         },
     )
 
@@ -134,11 +146,14 @@ def edit_project_page(
     request: Request,
     user: User = Depends(require_user),
     project: Project = Depends(get_project_with_access),
+    csrf_token: str = Depends(get_csrf_token),
 ):
     if not permission_service.can_edit_project(user, project):
         raise HTTPException(status_code=403, detail="Нет прав")
     return templates.TemplateResponse(
-        request, "projects/edit.html", {"user": user, "field_errors": None, "project": project}
+        request,
+        "projects/edit.html",
+        {"user": user, "field_errors": None, "project": project, "csrf_token": csrf_token},
     )
 
 
@@ -151,6 +166,7 @@ def edit_project(
     description: str = Form(""),
     db: Session = Depends(get_db),
     project: Project = Depends(get_project_with_access),
+    csrf_token: str = Form(...),
 ):
     name = name.lower()
     description = description.lower()
@@ -193,6 +209,7 @@ def delete_project(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
     project: Project = Depends(get_project_with_access),
+    csrf_token: str = Form(...),
 ):
     if not permission_service.can_delete_project(user, project):
         raise HTTPException(status_code=403, detail="Нет прав")
@@ -213,6 +230,7 @@ def manage_member(
     user: User = Depends(require_user),
     action: str = Form(""),
     project: Project = Depends(get_project_with_access),
+    csrf_token: str = Form(...),
 ):
     if not permission_service.can_edit_project(user, project):
         raise HTTPException(status_code=403, detail="Нет прав")
@@ -261,6 +279,7 @@ def get_project_tasks(
     filter_member: str = Query(""),
     sort_order: str = Query("desc"),
     search: str = Query(""),
+    csrf_token: str = Depends(get_csrf_token),
 ):
     flash_message = request.session.pop("flash_message", None)
     flash_type = request.session.pop("flash_type", "success")
@@ -304,6 +323,7 @@ def get_project_tasks(
             "tasks_by_status": tasks_by_status,
             "flash_message": flash_message,
             "flash_type": flash_type,
+            "csrf_token": csrf_token,
         },
     )
 
@@ -315,6 +335,7 @@ def create_task_page(
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
     project: Project = Depends(get_project_with_access),
+    csrf_token: str = Depends(get_csrf_token),
 ):
     return templates.TemplateResponse(
         request,
@@ -326,6 +347,7 @@ def create_task_page(
             "members": project_service.get_project_members(db, project),
             "statuses": Status,
             "priorities": Priority,
+            "csrf_token": csrf_token,
         },
     )
 
@@ -343,6 +365,7 @@ def create_task(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
     project: Project = Depends(get_project_with_access),
+    csrf_token: str = Form(...),
 ):
     title = title.lower()
     description = description.lower()
@@ -384,6 +407,9 @@ def create_task(
             },
         )
     task = task_service.create_task(db, user, p_id, form)
+    assignee_name = "Нет"
+    if db.get(User, assignee_id):
+        assignee_name = db.get(User, assignee_id).display_name
     log_activity(
         db,
         p_id,
@@ -392,7 +418,7 @@ def create_task(
         "task",
         task.id,
         f"создал задачу «{task.title}». Название: {title},  Статус: {status}, Приоритет: {priority},"
-        f" Назначенный: {db.get(User, assignee_id).display_name}, Выполнить до: {due_date}",
+        f" Назначенный: {assignee_name}, Выполнить до: {due_date}",
     )
     request.session["flash_message"] = "Задача создана!"
     request.session["flash_type"] = "success"
@@ -444,7 +470,6 @@ def export_tasks_csv(
         ]
     )
 
-    # Данные
     for task in tasks:
         writer.writerow(
             [

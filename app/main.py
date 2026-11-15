@@ -1,10 +1,13 @@
 from pathlib import Path
 from urllib.parse import quote
 
-from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from starlette.exceptions import HTTPException
+from fastapi_csrf_protect import CsrfProtect
+from fastapi_csrf_protect.exceptions import CsrfProtectError
+from pydantic import BaseModel
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import settings
@@ -32,6 +35,66 @@ app.mount(
     StaticFiles(directory=Path(__file__).parent / "static"),
     name="static",
 )
+
+
+class CsrfSettings(BaseModel):
+    secret_key: str = settings.secret_key
+    cookie_samesite: str = "lax"
+    cookie_secure: bool = True
+    cookie_key: str = "csrf_token"
+    header_name: str = "X-CSRF-Token"
+
+
+@CsrfProtect.load_config
+def get_csrf_config():
+    return CsrfSettings()
+
+
+class CSRFMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        protected_methods = "POST"
+
+        excluded_paths = {
+            "/login",
+            "/register",
+        }
+
+        csrf_protect = CsrfProtect()
+
+        if request.method == "GET":
+            response = await call_next(request)
+            csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+            csrf_protect.set_csrf_cookie(signed_token, response)
+            return response
+
+        # Для мутирующих запросов проверяем токен
+        if request.method in protected_methods and request.url.path not in excluded_paths:
+            try:
+                csrf_protect.validate_csrf(request)
+            except CsrfProtectError:
+                return JSONResponse(
+                    status_code=403, content={"detail": "CSRF token validation failed"}
+                )
+
+        response = await call_next(request)
+        return response
+
+
+app.add_middleware(CSRFMiddleware)
+
+
+@app.exception_handler(CsrfProtectError)
+def csrf_validation_error(request: Request, exc: CsrfProtectError):
+    return HTTPException(status_code=400, detail={"detail": "CSRF token mismatch"})
+
+
+@app.get("/get-csrf-token")
+def get_csrf_token(csrf_protect: CsrfProtect = Depends()):
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+    response = JSONResponse(content={"csrf_token": csrf_token})
+    csrf_protect.set_csrf_cookie(signed_token, response)
+    return response
+
 
 app.include_router(auth_router)
 app.include_router(project_router)

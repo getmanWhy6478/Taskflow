@@ -5,7 +5,7 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from app.database import get_db
-from app.dependencies import require_user
+from app.dependencies import get_csrf_token, require_user
 from app.forms.change_form import ChangeUser
 from app.forms.change_password_form import ChangePassword
 from app.models import User
@@ -16,7 +16,9 @@ router = APIRouter(prefix="/profile", tags=["profile"])
 
 
 @router.get("")
-def profile(request: Request, user: User = Depends(require_user)):
+def profile(
+    request: Request, user: User = Depends(require_user), csrf_token: str = Depends(get_csrf_token)
+):
     flash_message = request.session.pop("flash_message", None)
     flash_type = request.session.pop("flash_type", "success")
     return templates.TemplateResponse(
@@ -28,6 +30,7 @@ def profile(request: Request, user: User = Depends(require_user)):
             "field_errors": None,
             "flash_type": flash_type,
             "flash_message": flash_message,
+            "csrf_token": csrf_token,
         },
     )
 
@@ -42,6 +45,7 @@ def change_name_or_password(
     action=Form(...),
     confirm_password: str = Form(""),
     current_password=Form(""),
+    csrf_token: str = Form(...),
 ):
     if action == "change_name":
         try:
