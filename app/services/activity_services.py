@@ -22,3 +22,4 @@ def log_activity(
     )
     db.add(log)
     db.commit()
+    db.refresh(log)

@@ -130,7 +130,7 @@ def get_activities(db: Session, project: Project) -> list[ActivityLog]:
     activities = (
         select(ActivityLog)
         .where(ActivityLog.project_id == project.id)
-        .order_by(ActivityLog.created_at.asc())
+        .order_by(ActivityLog.created_at.desc())
         .limit(15)
     )
     return list(db.scalars(activities))

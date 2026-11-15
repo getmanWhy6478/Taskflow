@@ -128,6 +128,7 @@ def edit_task(
                 "priority": priority,
                 "assignee_id": assignee_id,
                 "due_date": due_date,
+                "csrf_token": csrf_token,
             },
         )
     task_service.update_task(db, task, form)

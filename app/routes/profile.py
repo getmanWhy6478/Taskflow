@@ -59,7 +59,12 @@ def change_name_or_password(
             return templates.TemplateResponse(
                 request,
                 "profile.html",
-                {"user": user, "field_errors": field_errors, "new_name": new_name},
+                {
+                    "user": user,
+                    "field_errors": field_errors,
+                    "new_name": new_name,
+                    "csrf_token": csrf_token,
+                },
             )
         profile_services.change_name(db, user, form)
         request.session["flash_message"] = "Имя успешно изменено!"
@@ -81,7 +86,12 @@ def change_name_or_password(
             return templates.TemplateResponse(
                 request,
                 "profile.html",
-                {"user": user, "password_errors": password_errors, "new_name": new_name},
+                {
+                    "user": user,
+                    "password_errors": password_errors,
+                    "new_name": new_name,
+                    "csrf_token": csrf_token,
+                },
             )
         try:
             form = ChangePassword(password=new_password)
@@ -94,7 +104,12 @@ def change_name_or_password(
             return templates.TemplateResponse(
                 request,
                 "profile.html",
-                {"user": user, "field_errors": field_errors, "new_name": new_name},
+                {
+                    "user": user,
+                    "field_errors": field_errors,
+                    "new_name": new_name,
+                    "csrf_token": csrf_token,
+                },
             )
         profile_services.change_password(db, user, form)
         request.session["flash_message"] = "Пароль успешно изменён!"

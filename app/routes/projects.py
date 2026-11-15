@@ -87,7 +87,13 @@ def create_project(
         return templates.TemplateResponse(
             request,
             "projects/create.html",
-            {"user": user, "fields_errors": field_errors, "name": name, "description": description},
+            {
+                "user": user,
+                "fields_errors": field_errors,
+                "name": name,
+                "description": description,
+                "csrf_token": csrf_token,
+            },
         )
     project = project_service.create_project(db, form, user)
     response = RedirectResponse("/projects", status_code=303)
@@ -183,7 +189,13 @@ def edit_project(
         return templates.TemplateResponse(
             request,
             "projects/edit.html",
-            {"user": user, "name": name, "description": description, "field_errors": field_errors},
+            {
+                "user": user,
+                "name": name,
+                "description": description,
+                "field_errors": field_errors,
+                "csrf_token": csrf_token,
+            },
         )
     project_service.edit_project(db, project, form)
     log_activity(
@@ -404,6 +416,7 @@ def create_task(
                 "members": project_service.get_project_members(db, project),
                 "statuses": Status,
                 "priorities": Priority,
+                "csrf_token": csrf_token,
             },
         )
     task = task_service.create_task(db, user, p_id, form)

@@ -158,7 +158,7 @@
             <div class="flex-grow-1">
               <div class="d-flex justify-content-between align-items-start">
                 <div class="text-body">
-                  <span class="fw-semibold text-body">{{ log.user.username }}</span>
+                  <span class="fw-semibold text-body">{{ log.user.display_name }}</span>
                   {{ log.details }}
 
                   {% if log.target_type == 'task' and log.target_id %}
