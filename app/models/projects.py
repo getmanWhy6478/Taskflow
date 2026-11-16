@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 if TYPE_CHECKING:
+    from app.models.log_activity import ActivityLog
     from app.models.project_members import ProjectsMember
     from app.models.tasks import Task
     from app.models.users import User
@@ -34,4 +35,6 @@ class Project(Base):
     )
     owner: Mapped["User"] = relationship(back_populates="my_project")
 
-    activities = relationship("ActivityLog", back_populates="project")
+    activities: Mapped[list["ActivityLog"]] = relationship(
+        "ActivityLog", back_populates="project", cascade="all, delete-orphan"
+    )

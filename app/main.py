@@ -6,8 +6,6 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi_csrf_protect import CsrfProtect
 from fastapi_csrf_protect.exceptions import CsrfProtectError
-from pydantic import BaseModel
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import settings
@@ -23,13 +21,6 @@ from app.templates.templates import templates
 
 app = FastAPI(title="TaskFlow")
 
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=settings.secret_key,
-    max_age=14 * 24 * 60 * 60,
-    same_site="lax",
-)
-
 app.mount(
     "/static",
     StaticFiles(directory=Path(__file__).parent / "static"),
@@ -37,50 +28,12 @@ app.mount(
 )
 
 
-class CsrfSettings(BaseModel):
-    secret_key: str = settings.secret_key
-    cookie_samesite: str = "lax"
-    cookie_secure: bool = True
-    cookie_key: str = "csrf_token"
-    header_name: str = "X-CSRF-Token"
-
-
-@CsrfProtect.load_config
-def get_csrf_config():
-    return CsrfSettings()
-
-
-class CSRFMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        protected_methods = "POST"
-
-        excluded_paths = {
-            "/login",
-            "/register",
-        }
-
-        csrf_protect = CsrfProtect()
-
-        if request.method == "GET":
-            response = await call_next(request)
-            csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
-            csrf_protect.set_csrf_cookie(signed_token, response)
-            return response
-
-        # Для мутирующих запросов проверяем токен
-        if request.method in protected_methods and request.url.path not in excluded_paths:
-            try:
-                csrf_protect.validate_csrf(request)
-            except CsrfProtectError:
-                return JSONResponse(
-                    status_code=403, content={"detail": "CSRF token validation failed"}
-                )
-
-        response = await call_next(request)
-        return response
-
-
-app.add_middleware(CSRFMiddleware)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.secret_key,
+    max_age=14 * 24 * 60 * 60,
+    same_site="lax",
+)
 
 
 @app.exception_handler(CsrfProtectError)

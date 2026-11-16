@@ -8,13 +8,14 @@ from starlette.responses import RedirectResponse
 
 from app.database import get_db
 from app.dependencies import (
-    get_csrf_token,
     get_task_with_access,
     get_task_with_access_only_view,
     require_user,
+    validate_csrf_token,
 )
 from app.forms.comment import CommentForm
 from app.forms.tasks import TaskForm
+from app.main import CsrfProtect
 from app.models import Priority, Status, Task, User
 from app.services import comment_services as comment_service
 from app.services import permission_services as permission_service
@@ -33,12 +34,13 @@ def get_task(
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
     task: Task = Depends(get_task_with_access_only_view),
-    csrf_token: str = Depends(get_csrf_token),
+    csrf_protect: CsrfProtect = Depends(),
 ):
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
     comments = task_service.get_tasks_comments(db, task)
     flash_message = request.session.pop("flash_message", None)
     flash_type = request.session.pop("flash_type", "success")
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request,
         "tasks/detail.html",
         {
@@ -50,6 +52,8 @@ def get_task(
             "csrf_token": csrf_token,
         },
     )
+    csrf_protect.set_csrf_cookie(signed_token, response)
+    return response
 
 
 @router.get("/{t_id}/edit")
@@ -59,13 +63,14 @@ def edit_task_page(
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
     task: Task = Depends(get_task_with_access),
-    csrf_token: str = Depends(get_csrf_token),
+    csrf_protect: CsrfProtect = Depends(),
 ):
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
     if not permission_service.can_edit_task(user, task):
         raise HTTPException(status_code=403, detail="Нет прав")
     project = project_services.get_project_by_id(db, task.project_id)
     available_members = project_services.get_project_members(db, project)
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request,
         "tasks/edit.html",
         {
@@ -78,6 +83,8 @@ def edit_task_page(
             "csrf_token": csrf_token,
         },
     )
+    csrf_protect.set_csrf_cookie(signed_token, response)
+    return response
 
 
 @router.post("/{t_id}/edit")
@@ -93,7 +100,8 @@ def edit_task(
     status: Status = Form(...),
     priority: Priority = Form(...),
     task: Task = Depends(get_task_with_access),
-    csrf_token: str = Form(...),
+    _: None = Depends(validate_csrf_token),
+    csrf_protect: CsrfProtect = Depends(),
 ):
     title = title.lower()
     description = description.lower()
@@ -116,7 +124,8 @@ def edit_task(
             field = error["loc"][0]
             msg = error["msg"]
             field_errors.setdefault(field, []).append(msg)
-        return templates.TemplateResponse(
+        csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+        response = templates.TemplateResponse(
             request,
             "tasks/edit.html",
             {
@@ -131,6 +140,8 @@ def edit_task(
                 "csrf_token": csrf_token,
             },
         )
+        csrf_protect.set_csrf_cookie(signed_token, response)
+        return response
     task_service.update_task(db, task, form)
     log_activity(
         db,
@@ -156,7 +167,7 @@ def edit_status(
     user: User = Depends(require_user),
     status: str = Form(...),
     task: Task = Depends(get_task_with_access),
-    csrf_token: str = Form(...),
+    _: None = Depends(validate_csrf_token),
 ):
     if not permission_service.can_edit_task_status(user, task):
         raise HTTPException(status_code=403, detail="Нет прав")
@@ -212,7 +223,7 @@ def delete_task(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
     task: Task = Depends(get_task_with_access),
-    csrf_token: str = Form(...),
+    _: None = Depends(validate_csrf_token),
 ):
     if not permission_service.can_delete_task(user, task):
         raise HTTPException(status_code=403, detail="Нет прав")
@@ -240,7 +251,7 @@ def add_comment(
     db: Session = Depends(get_db),
     text: str = Form(...),
     task: Task = Depends(get_task_with_access),
-    csrf_token: str = Form(...),
+    _: None = Depends(validate_csrf_token),
 ):
     form = CommentForm(text=text)
     comment_service.create_comment(db, form, task, user)

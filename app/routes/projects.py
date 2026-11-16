@@ -11,15 +11,16 @@ from starlette.responses import RedirectResponse, Response
 
 from app.database import get_db
 from app.dependencies import (
-    get_csrf_token,
     get_project_with_access,
     get_project_with_access_only_view,
     require_user,
+    validate_csrf_token,
 )
 from app.forms.delete import DeleteForm
 from app.forms.member import MemberForm
 from app.forms.project import ProjectForm
 from app.forms.tasks import TaskForm
+from app.main import CsrfProtect
 from app.models import Priority, Project, Status, User
 from app.services import admin_services as admin_service
 from app.services import permission_services as permission_service
@@ -38,12 +39,14 @@ def get_projects(
     request: Request,
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
-    csrf_token: str = Depends(get_csrf_token),
+    csrf_protect: CsrfProtect = Depends(),
 ):
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
     projects = project_service.get_all_projects(db, user)
     flash_message = request.session.pop("flash_message", None)
     flash_type = request.session.pop("flash_type", "success")
-    return templates.TemplateResponse(
+
+    response = templates.TemplateResponse(
         request,
         "projects/list.html",
         {
@@ -54,17 +57,22 @@ def get_projects(
             "csrf_token": csrf_token,
         },
     )
+    csrf_protect.set_csrf_cookie(signed_token, response)
+    return response
 
 
 @router.get("/create")
 def create_project_page(
-    request: Request, user: User = Depends(require_user), csrf_token: str = Depends(get_csrf_token)
+    request: Request, user: User = Depends(require_user), csrf_protect: CsrfProtect = Depends()
 ):
-    return templates.TemplateResponse(
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+    response = templates.TemplateResponse(
         request,
         "projects/create.html",
         {"user": user, "field_errors": None, "csrf_token": csrf_token},
     )
+    csrf_protect.set_csrf_cookie(signed_token, response)
+    return response
 
 
 @router.post("/create")
@@ -74,7 +82,8 @@ def create_project(
     name: str = Form(...),
     description: str = Form(""),
     db: Session = Depends(get_db),
-    csrf_token: str = Form(...),
+    _: None = Depends(validate_csrf_token),
+    csrf_protect: CsrfProtect = Depends(),
 ):
     try:
         form = ProjectForm(name=name, description=description)
@@ -84,7 +93,8 @@ def create_project(
             field = error["loc"][0]
             message = error["msg"]
             field_errors.setdefault(field, []).append(message)
-        return templates.TemplateResponse(
+        csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+        response = templates.TemplateResponse(
             request,
             "projects/create.html",
             {
@@ -95,6 +105,8 @@ def create_project(
                 "csrf_token": csrf_token,
             },
         )
+        csrf_protect.set_csrf_cookie(signed_token, response)
+        return response
     project = project_service.create_project(db, form, user)
     response = RedirectResponse("/projects", status_code=303)
     p_m = MemberForm(member_id=user.id, role="Владелец")
@@ -120,8 +132,9 @@ def get_project_by_id(
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
     project: Project = Depends(get_project_with_access_only_view),
-    csrf_token: str = Depends(get_csrf_token),
+    csrf_protect: CsrfProtect = Depends(),
 ):
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
     all_users = admin_service.get_all_users(db)
     available_users = project_service.get_available_users(db, p_id, all_users)
     tasks, task_count = project_service.get_project_tasks(db, p_id, "", "", "", "", "", "")
@@ -129,7 +142,7 @@ def get_project_by_id(
     flash_type = request.session.pop("flash_type", "success")
 
     activities = project_service.get_activities(db, project)
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request,
         "projects/detail.html",
         {
@@ -144,6 +157,8 @@ def get_project_by_id(
             "csrf_token": csrf_token,
         },
     )
+    csrf_protect.set_csrf_cookie(signed_token, response)
+    return response
 
 
 @router.get("/{p_id}/edit")
@@ -152,15 +167,18 @@ def edit_project_page(
     request: Request,
     user: User = Depends(require_user),
     project: Project = Depends(get_project_with_access),
-    csrf_token: str = Depends(get_csrf_token),
+    csrf_protect: CsrfProtect = Depends(),
 ):
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
     if not permission_service.can_edit_project(user, project):
         raise HTTPException(status_code=403, detail="Нет прав")
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request,
         "projects/edit.html",
         {"user": user, "field_errors": None, "project": project, "csrf_token": csrf_token},
     )
+    csrf_protect.set_csrf_cookie(signed_token, response)
+    return response
 
 
 @router.post("/{p_id}/edit")
@@ -172,7 +190,8 @@ def edit_project(
     description: str = Form(""),
     db: Session = Depends(get_db),
     project: Project = Depends(get_project_with_access),
-    csrf_token: str = Form(...),
+    _: None = Depends(validate_csrf_token),
+    csrf_protect: CsrfProtect = Depends(),
 ):
     name = name.lower()
     description = description.lower()
@@ -186,7 +205,8 @@ def edit_project(
             field = error["loc"][0]
             message = error["msg"]
             field_errors.setdefault(field, []).append(message)
-        return templates.TemplateResponse(
+        csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+        response = templates.TemplateResponse(
             request,
             "projects/edit.html",
             {
@@ -197,6 +217,8 @@ def edit_project(
                 "csrf_token": csrf_token,
             },
         )
+        csrf_protect.set_csrf_cookie(signed_token, response)
+        return response
     project_service.edit_project(db, project, form)
     log_activity(
         db,
@@ -221,7 +243,7 @@ def delete_project(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
     project: Project = Depends(get_project_with_access),
-    csrf_token: str = Form(...),
+    _: None = Depends(validate_csrf_token),
 ):
     if not permission_service.can_delete_project(user, project):
         raise HTTPException(status_code=403, detail="Нет прав")
@@ -242,7 +264,7 @@ def manage_member(
     user: User = Depends(require_user),
     action: str = Form(""),
     project: Project = Depends(get_project_with_access),
-    csrf_token: str = Form(...),
+    _: None = Depends(validate_csrf_token),
 ):
     if not permission_service.can_edit_project(user, project):
         raise HTTPException(status_code=403, detail="Нет прав")
@@ -291,8 +313,9 @@ def get_project_tasks(
     filter_member: str = Query(""),
     sort_order: str = Query("desc"),
     search: str = Query(""),
-    csrf_token: str = Depends(get_csrf_token),
+    csrf_protect: CsrfProtect = Depends(),
 ):
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
     flash_message = request.session.pop("flash_message", None)
     flash_type = request.session.pop("flash_type", "success")
     filters = {
@@ -317,7 +340,7 @@ def get_project_tasks(
         status_name = task.status.value
         if status_name in tasks_by_status:
             tasks_by_status[status_name].append(task)
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request,
         "projects/project_tasks.html",
         {
@@ -336,8 +359,12 @@ def get_project_tasks(
             "flash_message": flash_message,
             "flash_type": flash_type,
             "csrf_token": csrf_token,
+            "sort_by": sort_by,
+            "sort_order": sort_order,
         },
     )
+    csrf_protect.set_csrf_cookie(signed_token, response)
+    return response
 
 
 @router.get("/{p_id}/tasks/create")
@@ -347,9 +374,10 @@ def create_task_page(
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
     project: Project = Depends(get_project_with_access),
-    csrf_token: str = Depends(get_csrf_token),
+    csrf_protect: CsrfProtect = Depends(),
 ):
-    return templates.TemplateResponse(
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+    response = templates.TemplateResponse(
         request,
         "tasks/create.html",
         {
@@ -362,6 +390,8 @@ def create_task_page(
             "csrf_token": csrf_token,
         },
     )
+    csrf_protect.set_csrf_cookie(signed_token, response)
+    return response
 
 
 @router.post("/{p_id}/tasks/create")
@@ -377,7 +407,8 @@ def create_task(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
     project: Project = Depends(get_project_with_access),
-    csrf_token: str = Form(...),
+    _: None = Depends(validate_csrf_token),
+    csrf_protect: CsrfProtect = Depends(),
 ):
     title = title.lower()
     description = description.lower()
@@ -400,7 +431,8 @@ def create_task(
             field = error["loc"][0]
             message = error["msg"]
             fields_errors.setdefault(field, []).append(message)
-        return templates.TemplateResponse(
+        csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+        response = templates.TemplateResponse(
             request,
             "tasks/create.html",
             {
@@ -419,6 +451,8 @@ def create_task(
                 "csrf_token": csrf_token,
             },
         )
+        csrf_protect.set_csrf_cookie(signed_token, response)
+        return response
     task = task_service.create_task(db, user, p_id, form)
     assignee_name = "Нет"
     if db.get(User, assignee_id):

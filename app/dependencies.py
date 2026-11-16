@@ -1,17 +1,15 @@
 from fastapi import Depends, HTTPException, Request
 from fastapi_csrf_protect import CsrfProtect
+from fastapi_csrf_protect.exceptions import CsrfProtectError
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from starlette.requests import Request as StarletteRequest
 from starlette.responses import RedirectResponse
 
+from app.config import settings
 from app.database import get_db
 from app.forms import project
 from app.models import Comment, Project, Task, User
-
-
-def get_csrf_token(request: Request):
-    csrf_protect = CsrfProtect()
-    csrf_token, _ = csrf_protect.generate_csrf_tokens()
-    return csrf_token
 
 
 class AuthRequiredException(HTTPException):
@@ -136,3 +134,37 @@ def delete_comment_with_access(
         raise HTTPException(403, "Задача не найдена или у вас нет доступа")
 
     return comment
+
+
+class CsrfSettings(BaseModel):
+    secret_key: str = settings.secret_key
+    cookie_samesite: str = "lax"
+    cookie_key: str = "csrf_token"
+    header_name: str = "X-CSRF-Token"
+    token_location: str = "header"
+
+
+@CsrfProtect.load_config
+def get_csrf_config():
+    return CsrfSettings()
+
+
+async def validate_csrf_token(request: Request, csrf_protect: CsrfProtect = Depends()):
+    form = await request.form()
+    csrf_token = form.get("csrf_token")
+
+    if not csrf_token:
+        raise HTTPException(status_code=403, detail="CSRF token missing in form")
+
+    scope = dict(request.scope)
+
+    scope["headers"] = [(k, v) for k, v in scope["headers"] if k.lower() != b"x-csrf-token"]
+
+    scope["headers"].append((b"x-csrf-token", str(csrf_token).encode()))
+
+    fake_request = StarletteRequest(scope, request.receive)
+
+    try:
+        await csrf_protect.validate_csrf(fake_request)
+    except CsrfProtectError as e:
+        raise HTTPException(status_code=403, detail="CSRF validation failed") from e

@@ -4,7 +4,8 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from app.database import get_db
-from app.dependencies import get_csrf_token, require_admin
+from app.dependencies import require_admin, validate_csrf_token
+from app.main import CsrfProtect
 from app.models.users import User
 from app.services import admin_services as admin_service
 from app.templates.templates import templates
@@ -17,13 +18,14 @@ def get_users(
     request: Request,
     db: Session = Depends(get_db),
     user: User = Depends(require_admin),
-    csrf_token: str = Depends(get_csrf_token),
+    csrf_protect: CsrfProtect = Depends(),
 ):
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
     users = admin_service.get_all_users(db)
     flash_message = request.session.pop("flash_message", None)
     flash_type = request.session.pop("flash_type", "success")
     tasks_count = admin_service.get_user_tasks(db)
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request,
         "admin.html",
         {
@@ -35,6 +37,8 @@ def get_users(
             "csrf_token": csrf_token,
         },
     )
+    csrf_protect.set_csrf_cookie(signed_token, response)
+    return response
 
 
 @router.post("/users/{u_id}/toggle-active")
@@ -43,7 +47,7 @@ def ban_user(
     u_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(require_admin),
-    csrf_token: str = Form(...),
+    _: None = Depends(validate_csrf_token),
 ):
     user_changed = db.get(User, u_id)
     if u_id == user.id:
@@ -60,7 +64,7 @@ def unban_user(
     u_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(require_admin),
-    csrf_token: str = Form(...),
+    _: None = Depends(validate_csrf_token),
 ):
     user_changed = db.get(User, u_id)
     if u_id == user.id:
@@ -78,7 +82,7 @@ def make_user_admin(
     db: Session = Depends(get_db),
     user: User = Depends(require_admin),
     action: str = Form(...),
-    csrf_token: str = Form(...),
+    _: None = Depends(validate_csrf_token),
 ):
     user_changed = db.get(User, u_id)
     if u_id == user.id:
