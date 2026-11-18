@@ -10,9 +10,11 @@ def get_all_users(db: Session) -> list[User]:
 
 
 def get_user_tasks(db: Session) -> dict:
-    found = select(Task.author_id, func.count(Task.id).label("task_count")).group_by(Task.author_id)
+    found = select(Task.assignee_id, func.count(Task.id).label("task_count")).group_by(
+        Task.assignee_id
+    )
 
-    return {row.author_id: row.task_count for row in db.execute(found).all()}
+    return {row.assignee_id: row.task_count for row in db.execute(found).all()}
 
 
 def ban_user(db: Session, user: User):
