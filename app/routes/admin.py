@@ -53,7 +53,7 @@ def ban_user(
     if u_id == user.id:
         raise HTTPException(400, "Нельзя заблокировать самого себя")
     admin_service.ban_user(db, user_changed)
-    request.session["flash_message"] = "Пользователь успешно забанен!"
+    request.session["flash_message"] = "Пользователь забанен"
     request.session["flash_type"] = "success"
     return RedirectResponse(url="/admin/users", status_code=303)
 
@@ -70,7 +70,7 @@ def unban_user(
     if u_id == user.id:
         raise HTTPException(400, "Нельзя заблокировать самого себя")
     admin_service.unban_user(db, user_changed)
-    request.session["flash_message"] = "Пользователь успешно разбанен!"
+    request.session["flash_message"] = "Пользователь разбанен"
     request.session["flash_type"] = "success"
     return RedirectResponse(url="/admin/users", status_code=303)
 
@@ -88,11 +88,11 @@ def make_user_admin(
     if u_id == user.id:
         raise HTTPException(400, "Нельзя заблокировать самого себя")
     if action == "make_admin":
-        request.session["flash_message"] = "Пользователь теперь имеет права администратора!"
+        request.session["flash_message"] = f"Пользователь {user.display_name} теперь имеет права администратора"
         request.session["flash_type"] = "success"
         admin_service.admin_user(db, user_changed)
     else:
-        request.session["flash_message"] = "Пользователь теперь не имеет прав администратора!"
+        request.session["flash_message"] = f"Пользователь {user.display_name} теперь не имеет прав администратора"
         request.session["flash_type"] = "success"
         admin_service.unadmin_user(db, user_changed)
     return RedirectResponse(url="/admin/users", status_code=303)

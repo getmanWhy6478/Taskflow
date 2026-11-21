@@ -153,7 +153,7 @@ def edit_task(
         f"Задача {task.title} была изменена. Название: {title},  Статус: {status}, Приоритет: {priority},"
         f" Назначенный: {db.get(User, assignee_id).display_name}, Выполнить до: {due_date}",
     )
-    request.session["flash_message"] = "Задача изменена!"
+    request.session["flash_message"] = "Задача успешно изменена"
     request.session["flash_type"] = "success"
     response = RedirectResponse(f"/tasks/{t_id}", status_code=303)
     return response
@@ -198,7 +198,7 @@ def edit_status(
         request.session["flash_type"] = "warning"
         return RedirectResponse(redirect_url, status_code=303)
     task_service.update_task_status(db, task, next_status)
-    request.session["flash_message"] = "Статус изменён!"
+    request.session["flash_message"] = "Статус успешно изменён"
     request.session["flash_type"] = "success"
 
     log_activity(
@@ -228,7 +228,7 @@ def delete_task(
     if not permission_service.can_delete_task(user, task):
         raise HTTPException(status_code=403, detail="Нет прав")
     task_service.delete_task(db, task)
-    request.session["flash_message"] = "Задачи больше нет!"
+    request.session["flash_message"] = "Задача успешно удалена"
     request.session["flash_type"] = "success"
     response = RedirectResponse("/projects", status_code=303)
     log_activity(
@@ -255,7 +255,7 @@ def add_comment(
 ):
     form = CommentForm(text=text)
     comment_service.create_comment(db, form, task, user)
-    request.session["flash_message"] = "Вы оставили комментарий!"
+    request.session["flash_message"] = "Вы оставили комментарий"
     request.session["flash_type"] = "success"
     response = RedirectResponse(f"/tasks/{t_id}", status_code=303)
     return response

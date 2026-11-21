@@ -52,11 +52,6 @@ def get_task_by_id(db: Session, t_id: int) -> Task:
     return db.scalar(task)
 
 
-def get_task_by_comment(db: Session, comment: Comment) -> Task:
-    task = select(Task).where(comment_id=comment.id)
-    return db.scalar(task)
-
-
 def delete_task(db: Session, task: Task) -> None:
     db.delete(task)
     db.commit()

@@ -120,7 +120,7 @@ def create_project(
         project.id,
         f"Проект «{project.name}» был создан",
     )
-    request.session["flash_message"] = "Проект реально создан!"
+    request.session["flash_message"] = "Проект успешно создан"
     request.session["flash_type"] = "success"
     return response
 
@@ -229,7 +229,7 @@ def edit_project(
         project.id,
         f"Проект был изменён. Имя: «{project.name}», Описание: {project.description}",
     )
-    request.session["flash_message"] = "Проект изменён!"
+    request.session["flash_message"] = "Проект успешно изменён"
     request.session["flash_type"] = "success"
 
     response = RedirectResponse(f"/projects/{p_id}", status_code=303)
@@ -248,7 +248,7 @@ def delete_project(
     if not permission_service.can_delete_project(user, project):
         raise HTTPException(status_code=403, detail="Нет прав")
     project_service.delete_project(db, project)
-    request.session["flash_message"] = "Проект удалён! :("
+    request.session["flash_message"] = "Проект успешно удалён"
     request.session["flash_type"] = "success"
     response = RedirectResponse("/projects", status_code=303)
     return response
@@ -280,7 +280,7 @@ def manage_member(
             member_id,
             f"Пользователь {db.get(User, member_id).display_name} добавлен в проект",
         )
-        request.session["flash_message"] = "В проекте на 1 участника больше!"
+        request.session["flash_message"] = "Пользователь успешно добавлен в проект"
         request.session["flash_type"] = "success"
     elif action == "remove":
         form = DeleteForm(member_id=member_id, project_id=project.id)
@@ -294,7 +294,7 @@ def manage_member(
             member_id,
             f"Пользователь {db.get(User, member_id).display_name} удалён из проекта",
         )
-        request.session["flash_message"] = "В проекте на 1 участника меньше!"
+        request.session["flash_message"] = "Пользователь успешно удалён из проекта"
         request.session["flash_type"] = "success"
     response = RedirectResponse(f"/projects/{p_id}", status_code=303)
     return response
@@ -467,13 +467,13 @@ def create_task(
         f"создал задачу «{task.title}». Название: {title},  Статус: {status}, Приоритет: {priority},"
         f" Назначенный: {assignee_name}, Выполнить до: {due_date}",
     )
-    request.session["flash_message"] = "Задача создана!"
+    request.session["flash_message"] = "Задача успешно создана"
     request.session["flash_type"] = "success"
     response = RedirectResponse(f"/projects/{p_id}", status_code=303)
     return response
 
 
-@router.get("{p_id}/tasks/export")
+@router.get("/{p_id}/tasks/export")
 def export_tasks_csv(
     p_id: int,
     request: Request,

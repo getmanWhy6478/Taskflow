@@ -128,7 +128,7 @@ def login_user(
         decoded_next = unquote(next_page)
         if decoded_next.startswith("/") and not decoded_next.startswith("//"):
             return RedirectResponse(decoded_next, status_code=303)
-    request.session["flash_message"] = "Поздравляем с входом!"
+    request.session["flash_message"] = "Вход успешен"
     request.session["flash_type"] = "success"
     response = RedirectResponse(next_page or "/dashboard", status_code=303)
     return response
