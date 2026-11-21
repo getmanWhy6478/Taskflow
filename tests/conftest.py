@@ -10,6 +10,7 @@ from app.models import Priority, Project, Status, Task
 from app.models.users import User
 from app.services.auth_services import hash_password
 from app.templates.templates import templates
+from app.dependencies import validate_csrf_token
 
 TEST_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(
@@ -21,6 +22,9 @@ TestingSessionLocal = sessionmaker(bind=engine)
 
 Base.engine = engine
 Base.SessionLocal = TestingSessionLocal
+
+async def mock_validate_csrf():
+    pass
 
 
 @pytest.fixture(autouse=True)
@@ -48,6 +52,7 @@ def client(db_session):
             pass
 
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[validate_csrf_token] = mock_validate_csrf
 
     with TestClient(app) as test_client:
         _original_post = test_client.post
