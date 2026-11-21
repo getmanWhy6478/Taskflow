@@ -1,4 +1,3 @@
-from itsdangerous import URLSafeTimedSerializer
 from pwdlib import PasswordHash
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -6,8 +5,6 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.forms.register import RegisterForm
 from app.models import User
-
-session_serializer = URLSafeTimedSerializer(settings.secret_key)
 
 hasher = PasswordHash.recommended()
 

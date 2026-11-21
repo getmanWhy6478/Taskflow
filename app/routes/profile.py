@@ -75,7 +75,7 @@ def change_name_or_password(
             csrf_protect.set_csrf_cookie(signed_token, response)
             return response
         profile_services.change_name(db, user, form)
-        request.session["flash_message"] = "Имя успешно изменено!"
+        request.session["flash_message"] = "Имя успешно изменено"
         request.session["flash_type"] = "success"
         return RedirectResponse(url="/profile", status_code=303)
 
@@ -126,7 +126,7 @@ def change_name_or_password(
             csrf_protect.set_csrf_cookie(signed_token, response)
             return response
         profile_services.change_password(db, user, form)
-        request.session["flash_message"] = "Пароль успешно изменён!"
+        request.session["flash_message"] = "Пароль успешно изменён"
         request.session["flash_type"] = "success"
         return RedirectResponse(url="/profile", status_code=303)
     return RedirectResponse(url="/profile", status_code=303)
