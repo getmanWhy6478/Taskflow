@@ -62,55 +62,39 @@
                       rows="4">{{ description if description else task.description }}</textarea>
           </div>
 
-          <div class="row g-3 mb-4">
+            <div class="row g-3 mb-4">
             <div class="col-md-4">
-              <label for="status" class="form-label">Статус</label>
-              <select class="form-select" id="status" name="status">
-                {% for s in statuses %}
-                  <option value="{{ s.value }}" 
-                          {% if status == s.value %}selected
-                          {% elif s == task.status %}selected{% endif %}>
-                    {{ s.value }}
-                  </option>
-                {% endfor %}
-              </select>
+            <label for="due_date" class="form-label">Срок на выполнение</label>
+            <input  type="date" class="form-control"
+                    id="due_date"
+                    name="due_date"
+                    value="{{ due_date if due_date else '' }}">
             </div>
-
             <div class="col-md-4">
               <label for="priority" class="form-label">Приоритет</label>
-              <select class="form-select {% if field_errors.priority %}is-invalid{% endif %}" 
-                      id="priority" 
+              <select class="form-select {% if field_errors.priority %}is-invalid{% endif %}"
+                      id="priority"
                       name="priority">
                 {% for p in priorities %}
-                  <option value="{{ p.value }}" 
-                          {% if priority == p.value %}selected
-                          {% elif p == task.priority %}selected{% endif %}>
+                  <option value="{{ p.value }}"
+                          {% if priority == p.value %}selected{% elif p.value == 'Средний' %}selected{% endif %}>
                     {{ p.value }}
                   </option>
                 {% endfor %}
               </select>
             </div>
-
             <div class="col-md-4">
               <label for="assignee_id" class="form-label">Исполнитель</label>
               <select class="form-select" id="assignee_id" name="assignee_id">
                 <option value="">— не назначен —</option>
                 {% for member in members %}
                   <option value="{{ member.id }}"
-                          {% if assignee_id == member.id|string %}selected
-                          {% elif task.assignee_id == member.id %}selected{% endif %}>
-                    {{ member.username }}
+                          {% if username == member.username %}selected{% endif %}>
+                    {{ member.username}}
                   </option>
                 {% endfor %}
               </select>
             </div>
-            <div class="mb-3">
-            <label for="due_date" class="form-label">Срок на выполнение</label>
-            <input  type="date" class="form-control"
-                    id="due_date"
-                    name="due_date"
-                    value="{{ due_time if due_time else '' }}">
-          </div>
           </div>
 
           <div class="d-flex gap-2">

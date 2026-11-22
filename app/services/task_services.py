@@ -11,7 +11,6 @@ def create_task(db: Session, user: User, p_id: int, form: TaskForm) -> Task:
     task = Task(
         title=form.title,
         description=form.description,
-        status=form.status,
         priority=form.priority,
         assignee_id=form.assignee_id,
         project_id=p_id,
@@ -27,7 +26,6 @@ def create_task(db: Session, user: User, p_id: int, form: TaskForm) -> Task:
 def update_task(db: Session, task: Task, form: TaskForm) -> None:
     task.title = form.title
     task.description = form.description
-    task.status = form.status
     task.priority = form.priority
     task.assignee_id = form.assignee_id
     task.due_date = form.due_date
