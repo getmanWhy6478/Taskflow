@@ -414,8 +414,6 @@ def create_task(
     _: None = Depends(validate_csrf_token),
     csrf_protect: CsrfProtect = Depends(),
 ):
-    title = title.lower()
-    description = description.lower()
     assignee_id = int(assignee_id) if assignee_id else None
     due_date = date.fromisoformat(due_date) if due_date else None
     if project is None:
