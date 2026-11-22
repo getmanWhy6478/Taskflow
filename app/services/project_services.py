@@ -92,7 +92,7 @@ def get_project_tasks(
     if search != "":
         search = search.lower()
         found = found.where(
-            or_(Task.title.like(f"%{search}%".lower), Task.description.like(f"%{search}%".lower))
+            or_(Task.title.like(f"%{search.lower()}%"), Task.description.like(f"%{search.lower()}%"))
         )
 
     column = enum_orders[sort_by] if sort_by in enum_orders else getattr(Task, sort_by, None)
