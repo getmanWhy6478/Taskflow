@@ -190,4 +190,75 @@
   {% endfor %}
 </div>
 
+{% if total_pages > 1 %}
+<div class="card shadow-sm mt-4">
+  <div class="card-body">
+    <nav aria-label="Навигация по страницам">
+      <ul class="pagination justify-content-center mb-0">
+
+        {# Кнопка "В начало" #}
+        {% if page > 1 %}
+          <li class="page-item">
+            <a class="page-link" href="{{ request.url.include_query_params(page=1) }}">
+              <i class="bi bi-chevron-double-left"></i>
+            </a>
+          </li>
+        {% endif %}
+
+        {# Кнопка "Назад" #}
+        {% if page > 1 %}
+          <li class="page-item">
+            <a class="page-link" href="{{ request.url.include_query_params(page=page - 1) }}">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+          </li>
+        {% endif %}
+
+        {# Номера страниц #}
+        {% for p in range(1, total_pages + 1) %}
+          {% if p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+            <li class="page-item {% if p == page %}active{% endif %}">
+              <a class="page-link" href="{{ request.url.include_query_params(page=p) }}">
+                {{ p }}
+              </a>
+            </li>
+          {% elif p == page - 3 or p == page + 3 %}
+            <li class="page-item disabled">
+              <span class="page-link">…</span>
+            </li>
+          {% endif %}
+        {% endfor %}
+
+        {# Кнопка "Вперёд" #}
+        {% if page < total_pages %}
+          <li class="page-item">
+            <a class="page-link" href="{{ request.url.include_query_params(page=page + 1) }}">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+          </li>
+        {% endif %}
+
+        {# Кнопка "В конец" #}
+        {% if page < total_pages %}
+          <li class="page-item">
+            <a class="page-link" href="{{ request.url.include_query_params(page=total_pages) }}">
+              <i class="bi bi-chevron-double-right"></i>
+            </a>
+          </li>
+        {% endif %}
+
+      </ul>
+    </nav>
+  </div>
+</div>
+{% endif %}
+
 {% endblock %}

@@ -101,14 +101,11 @@ def get_project_tasks(
         found = found.order_by(asc(column)) if order == "asc" else found.order_by(desc(column))
     else:
         found = found.order_by(desc(Task.created_at))
-
+    total_count = select(func.count()).select_from(found.subquery())
+    total_count = db.scalar(total_count) or 0
     if tasks_per_page > 0:
         offset = (page - 1) * tasks_per_page
         found = found.offset(offset).limit(tasks_per_page)
-
-    total_count = select(func.count()).select_from(found.subquery())
-
-    total_count = db.scalar(total_count) or 0
 
     total_pages = 0
     if tasks_per_page > 0:
