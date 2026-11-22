@@ -21,7 +21,7 @@ class Task(Base):
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     title: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str | None]
-    status: Mapped[Status] = mapped_column(default=Status.IN_WORK, index=True, nullable=False)
+    status: Mapped[Status] = mapped_column(default=Status.NEW, index=True, nullable=False)
     priority: Mapped[Priority] = mapped_column(default=Priority.MEDIUM, nullable=False)
     assignee_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), index=True)
     due_date: Mapped[date | None] = mapped_column(index=True)

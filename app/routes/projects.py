@@ -405,7 +405,6 @@ def create_task(
     p_id: int,
     title: str = Form(...),
     description: str = Form(""),
-    status: Status = Form(default=Status.IN_WORK),
     priority: Priority = Form(default=Priority.MEDIUM),
     assignee_id: str = Form(""),
     due_date: str = Form(""),
@@ -425,7 +424,6 @@ def create_task(
         form = TaskForm(
             title=title,
             description=description,
-            status=status,
             priority=priority,
             assignee_id=assignee_id,
             due_date=due_date,
@@ -447,11 +445,9 @@ def create_task(
                 "title": title,
                 "description": description,
                 "due_date": due_date,
-                "status": status,
                 "priority": priority,
                 "assignee_id": assignee_id,
                 "members": project_service.get_project_members(db, project),
-                "statuses": Status,
                 "priorities": Priority,
                 "csrf_token": csrf_token,
             },
@@ -469,7 +465,7 @@ def create_task(
         "created",
         "task",
         task.id,
-        f"создал задачу «{task.title}». Название: {title},  Статус: {status}, Приоритет: {priority},"
+        f"создал задачу «{task.title}». Название: {title}, Приоритет: {priority},"
         f" Назначенный: {assignee_name}, Выполнить до: {due_date}",
     )
     request.session["flash_message"] = "Задача успешно создана"
@@ -495,7 +491,7 @@ def export_tasks_csv(
     if not project:
         raise HTTPException(404, "Проект не найден")
 
-    tasks, task_count = project_service.get_project_tasks(
+    tasks, task_count, _ = project_service.get_project_tasks(
         db, p_id, status, priority, filter_member, sort_order, sort_by, search
     )
 

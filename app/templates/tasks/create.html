@@ -57,17 +57,15 @@
                       rows="4">{{ description if description else '' }}</textarea>
           </div>
 
-          <div class="mb-3">
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
             <label for="due_date" class="form-label">Срок на выполнение</label>
             <input  type="date" class="form-control"
                     id="due_date"
                     name="due_date"
                     value="{{ due_date if due_date else '' }}">
-          </div>
-
-
-          <div class="row g-3 mb-4">
-            <div class="col-md-6">
+            </div>
+            <div class="col-md-4">
               <label for="priority" class="form-label">Приоритет</label>
               <select class="form-select {% if field_errors.priority %}is-invalid{% endif %}" 
                       id="priority" 
@@ -80,20 +78,7 @@
                 {% endfor %}
               </select>
             </div>
-            <div class="col-md-6">
-              <label for="status" class="form-label">Статус</label>
-              <select class="form-select {% if field_errors.priority %}is-invalid{% endif %}"
-                      id="status"
-                      name="status">
-                {% for s in statuses %}
-                  <option value="{{ s.value }}"
-                          {% if status == s.value %}selected{% elif s.value == 'В работе' %}selected{% endif %}>
-                    {{ s.value }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label for="assignee_id" class="form-label">Исполнитель</label>
               <select class="form-select" id="assignee_id" name="assignee_id">
                 <option value="">— не назначен —</option>

@@ -77,7 +77,6 @@ def edit_task_page(
             "user": user,
             "task": task,
             "field_errors": None,
-            "statuses": Status,
             "priorities": Priority,
             "members": available_members,
             "csrf_token": csrf_token,
@@ -97,7 +96,6 @@ def edit_task(
     db: Session = Depends(get_db),
     title: str = Form(...),
     description: str = Form(""),
-    status: Status = Form(...),
     priority: Priority = Form(...),
     task: Task = Depends(get_task_with_access),
     _: None = Depends(validate_csrf_token),
@@ -113,7 +111,6 @@ def edit_task(
         form = TaskForm(
             title=title,
             description=description,
-            status=status,
             priority=priority,
             assignee_id=assignee_id,
             due_date=due_date,
@@ -133,7 +130,6 @@ def edit_task(
                 "user": user,
                 "title": title,
                 "description": description,
-                "status": status,
                 "priority": priority,
                 "assignee_id": assignee_id,
                 "due_date": due_date,
@@ -150,7 +146,7 @@ def edit_task(
         "task_updated",
         "task",
         task.id,
-        f"Задача {task.title} была изменена. Название: {title},  Статус: {status}, Приоритет: {priority},"
+        f"Задача {task.title} была изменена. Название: {title}, Приоритет: {priority},"
         f" Назначенный: {db.get(User, assignee_id).display_name}, Выполнить до: {due_date}",
     )
     request.session["flash_message"] = "Задача успешно изменена"
