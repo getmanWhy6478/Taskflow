@@ -137,7 +137,7 @@ def get_project_by_id(
     csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
     all_users = admin_service.get_all_users(db)
     available_users = project_service.get_available_users(db, p_id, all_users)
-    tasks, task_count = project_service.get_project_tasks(db, p_id, "", "", "", "", "", "")
+    tasks, task_count, _ = project_service.get_project_tasks(db, p_id, "", "", "", "", "", "", 1, 0)
     flash_message = request.session.pop("flash_message", None)
     flash_type = request.session.pop("flash_type", "success")
 
@@ -313,6 +313,7 @@ def get_project_tasks(
     filter_member: str = Query(""),
     sort_order: str = Query("desc"),
     search: str = Query(""),
+    page: int = Query(1, ge=1),
     csrf_protect: CsrfProtect = Depends(),
 ):
     csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
@@ -327,14 +328,15 @@ def get_project_tasks(
         "search": search,
     }
     request.session[f"filters_{p_id}"] = filters
-    tasks, total_count = project_service.get_project_tasks(
-        db, p_id, status, priority, filter_member, sort_order, sort_by, search
+    tasks, total_count, total_pages = project_service.get_project_tasks(
+        db, p_id, status, priority, filter_member, sort_order, sort_by, search, page, TASKS_PER_PAGE
     )
     tasks_by_status = {
         "Новая": [],
         "В работе": [],
         "Выполнена": [],
     }
+
 
     for task in tasks:
         status_name = task.status.value
@@ -361,6 +363,9 @@ def get_project_tasks(
             "csrf_token": csrf_token,
             "sort_by": sort_by,
             "sort_order": sort_order,
+            "tasks_per_page": TASKS_PER_PAGE,
+            "total_pages": total_pages,
+            "page": page
         },
     )
     csrf_protect.set_csrf_cookie(signed_token, response)
