@@ -66,7 +66,9 @@ def get_project_tasks(
     order: str,
     sort_by: str,
     search: str,
-) -> tuple[list[Task], int]:
+    page: int,
+    tasks_per_page: int
+) -> tuple[list[Task], int, int]:
     found = select(Task).where(Task.project_id == p_id)
 
     if status != "":
@@ -90,7 +92,7 @@ def get_project_tasks(
     if search != "":
         search = search.lower()
         found = found.where(
-            or_(Task.title.like(f"%{search}%"), Task.description.like(f"%{search}%"))
+            or_(Task.title.like(f"%{search}%".lower), Task.description.like(f"%{search}%".lower))
         )
 
     column = enum_orders[sort_by] if sort_by in enum_orders else getattr(Task, sort_by, None)
@@ -100,11 +102,20 @@ def get_project_tasks(
     else:
         found = found.order_by(desc(Task.created_at))
 
+    if tasks_per_page > 0:
+        offset = (page - 1) * tasks_per_page
+        found = found.offset(offset).limit(tasks_per_page)
+
     total_count = select(func.count()).select_from(found.subquery())
 
     total_count = db.scalar(total_count) or 0
 
-    return list(db.scalars(found)), total_count
+    total_pages = 0
+    if tasks_per_page > 0:
+        total_pages = max(1, (total_count + tasks_per_page - 1) // tasks_per_page)
+
+
+    return list(db.scalars(found)), total_count, total_pages
 
 
 def get_available_users(db: Session, p_id: int, users: list[User]) -> list[User]:
