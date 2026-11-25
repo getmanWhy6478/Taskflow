@@ -12,7 +12,7 @@ from starlette.responses import RedirectResponse, Response
 from app.database import get_db
 from app.dependencies import (
     get_project_with_access,
-    get_project_with_access_only_view,
+    get_project_with_access_with_admin,
     require_user,
     validate_csrf_token,
 )
@@ -131,7 +131,7 @@ def get_project_by_id(
     p_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
-    project: Project = Depends(get_project_with_access_only_view),
+    project: Project = Depends(get_project_with_access_with_admin),
     csrf_protect: CsrfProtect = Depends(),
 ):
     csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
@@ -306,7 +306,7 @@ def get_project_tasks(
     p_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
-    project: Project = Depends(get_project_with_access_only_view),
+    project: Project = Depends(get_project_with_access_with_admin),
     status: str = Query(""),
     priority: str = Query(""),
     sort_by: str = Query("created_at"),
