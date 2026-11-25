@@ -55,9 +55,9 @@ def register_user(
             },
             status_code=400,
         )
-    if auth_services.is_user_already_registered(db, form):
+    if error_message := auth_services.is_user_already_registered(db, form):
         errors = []
-        errors.append("Username already in use.")
+        errors.append(error_message)
         return templates.TemplateResponse(
             request,
             "auth/register.html",
@@ -101,7 +101,7 @@ def login_user(
     next_page: str = Form(""),
 ):
     form = LoginForm(username=username, password=password)
-    user = search_service.search_user_by_username(db, form.username)
+    user = search_service.search_user_by_username_or_email(db, form.username)
     if not user or not auth_services.verify_password(form.password, user.password_hash):
         return templates.TemplateResponse(
             request,
