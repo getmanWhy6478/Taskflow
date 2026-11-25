@@ -32,8 +32,9 @@ def add_user(form: RegisterForm, db: Session, hashed_password: str) -> None:
     return
 
 
-def is_user_already_registered(db: Session, form: RegisterForm) -> bool:
-    return (
-        db.query(User).filter_by(username=form.username).first() is not None
-        or db.query(User).filter_by(email=form.email).first() is not None
-    )
+def is_user_already_registered(db: Session, form: RegisterForm) -> bool|str:
+    if db.query(User).filter_by(username=form.username).first() is not None:
+        return "Username already in use."
+    elif db.query(User).filter_by(email=form.email).first() is not None:
+        return "Email already in use."
+    return False
