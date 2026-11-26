@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, desc, asc
 from sqlalchemy.orm import Session
 
 from app.forms.tasks import TaskForm
@@ -57,7 +57,7 @@ def delete_task(db: Session, task: Task) -> None:
 
 
 def get_recent_tasks(db: Session, user: User, limit: int) -> list[Task]:
-    tasks = select(Task).where(Task.assignee_id == user.id).order_by(Task.created_at).limit(limit)
+    tasks = select(Task).where(Task.assignee_id == user.id).order_by(desc(Task.created_at)).limit(limit)
     return list(db.scalars(tasks))
 
 
@@ -67,5 +67,5 @@ def get_users_tasks(db: Session, user: User) -> list[Task]:
 
 
 def get_tasks_comments(db: Session, task: Task) -> list[Comment]:
-    comments = select(Comment).where(Comment.task_id == task.id)
+    comments = select(Comment).where(Comment.task_id == task.id).order_by(asc(Comment.created_at))
     return list(db.scalars(comments))
