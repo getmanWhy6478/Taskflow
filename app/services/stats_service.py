@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, or_
 from sqlalchemy.orm import Session
 
 from app.models import Task
@@ -11,7 +11,7 @@ def get_stats(db: Session, user: User) -> dict:
     tasks_count_new = db.scalar(
         select(func.count())
         .select_from(Task)
-        .where(Task.assignee_id == user.id, Task.status == "NEW")
+        .where(Task.assignee_id == user.id, or_(Task.status == "NEW", Task.status == "IN_WORK"))
     )
     tasks_count_in_work = db.scalar(
         select(func.count())

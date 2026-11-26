@@ -208,3 +208,4 @@ form + form { margin-top: 0; }
 [data-bs-theme="dark"] .priority-Высокий { background: rgba(220, 53, 69, 0.2); color: #ea868f; }
 [data-bs-theme="dark"] .priority-Средний { background: rgba(255, 193, 7, 0.2); color: #ffda6a; }
 [data-bs-theme="dark"] .priority-Низкий  { background: rgba(25, 135, 84, 0.2); color: #75b798; }
+

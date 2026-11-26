@@ -174,10 +174,23 @@
           {% if task.due_date %}
             {% set is_overdue = task.due_date < today and task.status.value != 'Выполнена' %}
             <span class="due-date {% if is_overdue %}overdue{% endif %}">
-              <i class="bi bi-calendar"></i> {{ task.due_date.strftime('%d.%m') }}
+              <i class="bi bi-calendar"></i> {{ task.due_date.strftime('%d.%m.%y') }}
             </span>
           {% endif %}
         </div>
+          <div>
+            {% if task.created_at %}
+              <div class="date-info created-date" title="Создано: {{ task.created_at.strftime('%d.%m.%Y') }}">
+                <span class="due-date"> Создано: {{ task.created_at.strftime('%d.%m.%y') }}</span>
+              </div>
+            {% endif %}
+
+            {% if task.updated_at and task.updated_at != task.created_at %}
+              <div class="date-info updated-date" title="Обновлено: {{ task.updated_at.strftime('%d.%m.%Y') }}">
+                <span class="due-date"> Обновлено: {{ task.updated_at.strftime('%d.%m.%y') }}</span>
+              </div>
+            {% endif %}
+          </div>
       </div>
       {% endfor %}
 
