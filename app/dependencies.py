@@ -72,7 +72,7 @@ def get_project_with_access(
     return project
 
 
-def get_project_with_access_only_view(
+def get_project_with_access_with_admin(
     p_id: int,
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
@@ -88,7 +88,7 @@ def get_project_with_access_only_view(
     return project
 
 
-def get_task_with_access_only_view(
+def get_task_with_access_with_admin(
     t_id: int,
     user: User = Depends(require_user),
     db: Session = Depends(get_db),

@@ -19,7 +19,7 @@
            class="text-decoration-none">
           <div class="card h-100 shadow-sm project-card position-relative">
             <span class="position-absolute top-0 end-0 translate-middle badge rounded-pill
-                 {% if project.tasks|length > 0 %}bg-primary{% else %}bg-secondary{% endif %}">
+                 {% if project.task|length > 0 %}bg-primary{% else %}bg-secondary{% endif %}">
                   {{ project.task|selectattr('status.name', '!=', 'DONE') | list | length }}
             <span class="visually-hidden">задач</span>
             </span>

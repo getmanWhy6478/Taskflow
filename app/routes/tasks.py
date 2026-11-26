@@ -9,7 +9,7 @@ from starlette.responses import RedirectResponse
 from app.database import get_db
 from app.dependencies import (
     get_task_with_access,
-    get_task_with_access_only_view,
+    get_task_with_access_with_admin,
     require_user,
     validate_csrf_token,
 )
@@ -33,7 +33,7 @@ def get_task(
     t_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
-    task: Task = Depends(get_task_with_access_only_view),
+    task: Task = Depends(get_task_with_access_with_admin),
     csrf_protect: CsrfProtect = Depends(),
 ):
     csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
@@ -62,7 +62,7 @@ def edit_task_page(
     request: Request,
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
-    task: Task = Depends(get_task_with_access),
+    task: Task = Depends(get_task_with_access_with_admin),
     csrf_protect: CsrfProtect = Depends(),
 ):
     csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
@@ -97,7 +97,7 @@ def edit_task(
     title: str = Form(...),
     description: str = Form(""),
     priority: Priority = Form(...),
-    task: Task = Depends(get_task_with_access),
+    task: Task = Depends(get_task_with_access_with_admin),
     _: None = Depends(validate_csrf_token),
     csrf_protect: CsrfProtect = Depends(),
 ):
@@ -218,7 +218,7 @@ def delete_task(
     t_id: int,
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
-    task: Task = Depends(get_task_with_access),
+    task: Task = Depends(get_task_with_access_with_admin),
     _: None = Depends(validate_csrf_token),
 ):
     if not permission_service.can_delete_task(user, task):

@@ -44,11 +44,11 @@
         <i class="bi bi-person-dash"></i> Удалить участника
       </button>
     {% endif %}
-
+    {%if user in project.members%}
     <a href="{{ url_for('create_task', p_id=project.id) }}" class="btn btn-primary">
       <i class="bi bi-plus-lg"></i> Создать задачу
     </a>
-
+    {%endif%}
     <a href="{{ url_for('get_project_tasks', p_id=project.id) }}" class="btn btn-outline-success">
       <i class="bi bi-list-check"></i> Все задачи
       <span class="badge bg-success">{{ total_count }}</span>

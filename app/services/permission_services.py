@@ -6,7 +6,7 @@ def can_edit_project(user: User, project: Project) -> bool:
 
 
 def can_edit_task(user: User, task: Task) -> bool:
-    return task.project.owner_id == user.id or task.author_id == user.id
+    return task.project.owner_id == user.id or task.author_id == user.id or user.is_admin
 
 
 def can_edit_task_status(user: User, task: Task) -> bool:
@@ -22,4 +22,4 @@ def can_delete_project(user: User, project: Project) -> bool:
 
 
 def can_delete_task(user: User, task: Task) -> bool:
-    return task.project.owner_id == user.id or task.author_id == user.id
+    return task.project.owner_id == user.id or task.author_id == user.id or user.is_admin
