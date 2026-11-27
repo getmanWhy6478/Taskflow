@@ -24,8 +24,6 @@ def add_user(form: RegisterForm, db: Session, hashed_password: str) -> None:
         email=form.email,
         display_name=form.display_name,
     )
-    if db.scalar(select(func.count(User.id))) == 0:
-        user.is_admin = True
     db.add(user)
     db.commit()
     db.refresh(user)
